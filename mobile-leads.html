@@ -11,9 +11,15 @@
 // ── PASSWORD GATE ─────────────────────────────────────────────────────────────
 (function(){
   const PASS="8989";
-  const KEY="ffc_auth_day";
-  const today=new Date().toISOString().slice(0,10); // "2026-05-05"
-  if(localStorage.getItem(KEY)===today)return; // already authed today
+  const KEY="ffc_auth_device";
+  // Once authed on a device, stay logged in forever (until user clears storage
+  // or explicitly signs out). Old daily-key upgrade path: if the old ffc_auth_day
+  // key exists at all, treat this device as already authed.
+  if(localStorage.getItem(KEY)==="yes")return;
+  if(localStorage.getItem("ffc_auth_day")){
+    localStorage.setItem(KEY,"yes");
+    return;
+  }
   // Block render until correct password entered
   document.addEventListener("DOMContentLoaded",function(){
     const gate=document.createElement("div");
@@ -52,7 +58,7 @@
     });
     if(pin.length===4){
       if(pin===PASS){
-        localStorage.setItem(KEY,today);
+        localStorage.setItem(KEY,"yes");
         const gate=document.getElementById("auth-gate");
         if(gate){gate.style.opacity="0";gate.style.transition="opacity .3s";setTimeout(function(){gate.remove();},300);}
       } else {
@@ -2171,8 +2177,15 @@ function switchSheet(i){
   syncNow(true,false,i);
 }
 
-// Tap ↻ = animated refresh, stay on current card
-function syncAndGoFirst(){syncNow(false,false);}
+// Tap ↻ = animated refresh, stay on current card. Background — non-blocking.
+function syncAndGoFirst(){
+  // If we have data already, keep showing it while refresh runs in background
+  if(contacts.length>0){
+    syncNow(false,false); // spinner shows on button, data stays visible
+  } else {
+    syncNow(false,false);
+  }
+}
 // Hold ↻ = animated refresh, go to first card
 function syncGoFirst(){syncNow(true,false);}
 
@@ -2208,28 +2221,40 @@ function isWaiting(ct){
   return due!==null&&due>Date.now();
 }
 
-async function syncNow(goFirst=false,silent=false,expectedSheet){
-  if(!silent)syncState("spin");
+async function syncNow(goFirst=false,silent=false,expectedSheet,retryAttempt=0){
+  if(!silent&&retryAttempt===0)syncState("spin");
   const syncingSheet=expectedSheet!==undefined?expectedSheet:activeSheet;
   const s=currentSheet(),url=s.url||SHEET_URL;
+  // Auto-retry helper — silent, up to 2 retries with a short backoff
+  function retryOrFail(reason){
+    if(retryAttempt<2){
+      // Silent retry with backoff (600ms, 1200ms)
+      setTimeout(function(){
+        syncNow(goFirst,silent,syncingSheet,retryAttempt+1);
+      },600*(retryAttempt+1));
+      return;
+    }
+    // Only surface error after all retries exhausted
+    const w=$("lead-card");
+    if(w&&!contacts.length){
+      w.innerHTML='<div class="empty"><span class="empty-icon">⚠️</span>Sync issue — pull to refresh or check connection<br><small>'+reason+'</small></div>';
+    }
+    if(!silent){syncState("fail");}
+  }
   try{
     const res=await fetch(url+"?t="+Date.now()+"&sheet="+encodeURIComponent(s.tab));
     const text=await res.text();
     // Only discard if user explicitly switched to a different sheet since we started
     if(activeSheet!==syncingSheet&&!goFirst)return;
     let data;
-    try{data=JSON.parse(text);}catch(e){
-      const w=$("lead-card");
-      if(w)w.innerHTML='<div class="empty"><span class="empty-icon">⚠️</span>Parse error: '+e.message+'<br><small>'+text.slice(0,100)+'</small></div>';
-      if(!silent){syncState("fail");toast("⚠️ Parse error");}return;}
+    try{data=JSON.parse(text);}catch(e){return retryOrFail("Parse error");}
     if(data.error){
+      // Server-side error — retry once in case it's transient, then surface
+      if(retryAttempt<1)return retryOrFail(data.error);
       const w=$("lead-card");
-      if(w)w.innerHTML='<div class="empty"><span class="empty-icon">⚠️</span>Sheet error: '+data.error+'</div>';
+      if(w&&!contacts.length)w.innerHTML='<div class="empty"><span class="empty-icon">⚠️</span>Sheet error: '+data.error+'</div>';
       if(!silent){syncState("fail");toast("⚠️ "+data.error);}return;}
-    if(!Array.isArray(data)){
-      const w=$("lead-card");
-      if(w)w.innerHTML='<div class="empty"><span class="empty-icon">⚠️</span>Bad data: '+typeof data+'<br><small>'+JSON.stringify(data).slice(0,100)+'</small></div>';
-      if(!silent){syncState("fail");toast("⚠️ Bad response");}return;}
+    if(!Array.isArray(data))return retryOrFail("Bad response format");
     const prevPhone=contacts[idx]?.phone;
     const prevName=contacts[idx]?.name;
     contacts=data;
@@ -2264,9 +2289,8 @@ async function syncNow(goFirst=false,silent=false,expectedSheet){
         }catch{}
       }).catch(function(){});
   }catch(err){
-    const w=$("lead-card");
-    if(w)w.innerHTML='<div class="empty"><span class="empty-icon">⚠️</span>Sync error: '+err.message+'</div>';
-    if(!silent){syncState("fail");toast("⚠️ "+err.message);}
+    // Network hiccup — silently retry, only surface after retries exhausted
+    return retryOrFail("Network: "+err.message);
   }
 }
 
@@ -3834,39 +3858,42 @@ async function generateAISMS(){
   btn.innerHTML="✨ Regenerate 3 drafts";btn.disabled=false;
 }
 
-/* BOOT — instant start, no waiting for network */
+/* BOOT — instant start, network sync happens in parallel */
 (function(){
   // initSheets is now synchronous from cache — no await needed
   initSheets(); // sets SHEETS from cache immediately, background-fetches for corrections
   buildSwitcher();
-  loadFallbackStatuses(); // status picker ready instantly from first tap
-
-  // Purge stale contact caches from other sheets
-  const validKeys=new Set(SHEETS.map(function(s){return s.cache+"_c";}));
-  Object.keys(localStorage).forEach(function(k){
-    if(k.endsWith("_c")&&k.startsWith("ffc_")&&!validKeys.has(k)){
-      if(!k.includes("sheets")&&!k.includes("brief")&&!k.includes("hist"))localStorage.removeItem(k);
-    }
-  });
 
   const sheet=currentSheet();
   const cacheOk=sheet.cache&&sheet.cache!=="ffc_loading";
   const cacheLoaded=cacheOk&&loadC()&&contacts.length>0;
 
   if(cacheLoaded){
-    // restoreWaitTimers MUST run first — it clears stale local timers where col K is empty
+    // Cache hit — render instantly, THEN kick off background sync in parallel with setup
     restoreWaitTimers();
     restoreReminderTimers();
     syncStatusesFromContacts();
-    positionOnFirstActive(); // now guaranteed to skip only leads with real active timers
+    positionOnFirstActive();
     renderAll();
-    syncNow(false,true); // silent background sync to catch any changes
+    // Start background sync immediately — don't wait for anything else
+    syncNow(false,true);
   } else {
-    // No cache — show spinner and fetch
+    // Cold start — show spinner and fetch
     const w=document.getElementById("lead-card");
     if(w)w.innerHTML='<div class="empty"><span class="empty-icon">⏳</span>Loading '+sheet.label+"…</div>";
     syncNow(true,false);
   }
+
+  // Non-critical setup runs after render is done (doesn't block first paint)
+  loadFallbackStatuses();
+
+  // Purge stale contact caches from other sheets (housekeeping, non-blocking)
+  const validKeys=new Set(SHEETS.map(function(s){return s.cache+"_c";}));
+  Object.keys(localStorage).forEach(function(k){
+    if(k.endsWith("_c")&&k.startsWith("ffc_")&&!validKeys.has(k)){
+      if(!k.includes("sheets")&&!k.includes("brief")&&!k.includes("hist"))localStorage.removeItem(k);
+    }
+  });
 
   if(typeof startAutoRefresh==="function")startAutoRefresh();
   if(typeof startTick==="function")startTick();
