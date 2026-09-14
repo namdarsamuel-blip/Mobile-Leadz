@@ -1793,20 +1793,26 @@ function renderCard(){
         +'</div>'
       +'</div>'
       +htmlWaitBanner
-      // Wait pill rendered directly below the DO NOT CALL banner — visually attached,
-      // forming a unified "parked lead" zone in red. Only rendered if there's an
-      // active wait timer (otherwise this block is empty).
+      // Wait pill + Reminder button on ONE row, sitting directly under the DO NOT CALL banner.
+      // Wait pill on the left (touching banner visually — same red family), Reminder on the right.
       +(function(){
         const cbHtml=buildCbHtml(c);
-        if(!cbHtml)return"";
-        return'<div style="padding:8px 16px 0;display:flex;align-items:center">'+cbHtml+'</div>';
+        const remHtml=htmlSetRem;
+        if(!cbHtml&&!remHtml)return"";
+        return'<div style="padding:8px 16px 4px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">'
+          +(cbHtml||'<span></span>')
+          +(remHtml||'')
+        +'</div>';
       })()
-      +'<div class="card-meta-row">'
-        +htmlSetRem
-      +'</div>'
-      +'<div style="padding:0 16px 12px;display:flex;align-items:flex-start;gap:8px">'
-        +'<span style="font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--sub);flex-shrink:0;padding-top:9px">Status</span>'
-        +'<textarea id="status-j-input" rows="1" placeholder="Add a status note..." style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(45,37,80,.8);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-weight:600;outline:none;resize:none;overflow:hidden;line-height:1.4;font-family:inherit;'+(isOnWait?'opacity:.4':'')+'" onfocus="this.style.borderColor=&apos;var(--gold)&apos;" onblur="this.style.borderColor=&apos;rgba(45,37,80,.8)&apos;">'+(statusDisplay||'')+'</textarea>'
+      +'<div style="padding:0 16px 12px" id="status-blocks-wrap"'+(isOnWait?' style="opacity:.4"':'')+'>'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+          +'<span style="font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--sub)">Status</span>'
+          +'<div style="display:flex;gap:6px;align-items:center">'
+            +(statusDisplay?'<button onclick="moveAllStatusToNotes('+c.row+')" style="font-size:10px;font-weight:800;padding:4px 9px;border-radius:6px;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3);color:#a78bfa;touch-action:manipulation;white-space:nowrap" title="Move all status lines to notes">→ notes (all)</button>':'')
+            +'<button onclick="addStatusLine('+c.row+')" style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.32);color:var(--gold);touch-action:manipulation;white-space:nowrap">+ line</button>'
+          +'</div>'
+        +'</div>'
+        +'<div id="status-blocks-list" data-row="'+c.row+'"></div>'
       +'</div>'
     +'</div>'
     +'<div class="cta-row" style="'+(isOnWait?'opacity:.25;pointer-events:none':'')+'">'
@@ -1847,28 +1853,8 @@ function renderCard(){
     +'</div>';
   setTimeout(()=>{
     const nt=$("notes-tap");if(nt&&!isOnWait)nt.onclick=()=>openEdit(idx);
-    // Status note textarea auto-resize + save on blur
-    const sj=$("status-j-input");
-    if(sj){
-      const resize=()=>{sj.style.height="auto";sj.style.height=sj.scrollHeight+"px";};
-      resize();sj.addEventListener("input",resize);
-      const orig=sj.value;
-      const boundRow=contacts[idx].row;
-      // Disable card swiping while editing so text selection drag works
-      sj.addEventListener("focus",function(){window._swipeDisabled=true;});
-      sj.addEventListener("blur",()=>{
-        window._swipeDisabled=false;
-        const val=sj.value.trim();
-        if(val!==orig){
-          const ct=contacts.find(x=>x.row===boundRow);
-          if(ct){ct.status=val;saveC();}
-          const s=currentSheet();
-          fetch(s.url||SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain"},
-            body:JSON.stringify({action:"updateCell",sheet:s.tab,row:boundRow,field:"status",value:val})});
-        }
-      });
-      sj.addEventListener("keydown",(e)=>{if(e.key==="Enter"&&!e.shiftKey)sj.blur();});
-    }
+    // Render multi-line status blocks
+    renderStatusBlocks(contacts[idx].row);
     // Render per-lead activity feed
     if(contacts[idx])renderLeadActivity(contacts[idx].row);
   },0);
@@ -2465,6 +2451,148 @@ function syncStatusesFromContacts(){
 // the lead immediately AFTER the last-touched one — so the call-down-the-list
 // flow continues seamlessly instead of jumping back to lead #1.
 function LAST_TOUCHED_KEY(){return"ffc_last_touched_"+currentSheet().cache;}
+
+// ── STATUS MULTI-LINE BLOCKS ─────────────────────────────────────────────────
+// Status field (col K) is stored as a single string with \n separators.
+// Each line becomes its own editable row on the card. Lines rejoin with \n on save.
+let _statusSaveTimer=null;
+
+function statusLinesFor_(row){
+  const c=contacts.find(x=>x.row===row);
+  if(!c||!c.status)return[];
+  return String(c.status).split("\n").map(function(s){return s;}).filter(function(s){return s.trim();});
+}
+
+function renderStatusBlocks(row){
+  const list=document.getElementById("status-blocks-list");
+  if(!list||parseInt(list.dataset.row)!==row)return;
+  const lines=statusLinesFor_(row);
+  if(!lines.length){
+    list.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,.3);font-style:italic;padding:8px 10px;background:rgba(255,255,255,.02);border:1px dashed rgba(45,37,80,.6);border-radius:8px;text-align:center">No status yet · tap + line</div>';
+    return;
+  }
+  list.innerHTML=lines.map(function(line,i){
+    return '<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:6px">'+
+      '<textarea rows="1" data-line-idx="'+i+'" data-row="'+row+'" oninput="onStatusLineInput(this)" onfocus="window._swipeDisabled=true" onblur="window._swipeDisabled=false;saveStatusLinesNow('+row+')" onkeydown="if(event.key===&apos;Enter&apos;&&!event.shiftKey){event.preventDefault();this.blur();}" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(45,37,80,.8);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-weight:600;outline:none;resize:none;overflow:hidden;line-height:1.4;font-family:inherit">'+escapeHTML(line)+'</textarea>'+
+      '<button onclick="moveStatusLineToNotes('+row+','+i+')" title="Move to notes" style="width:30px;height:30px;flex-shrink:0;padding:0;border-radius:8px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.28);color:#a78bfa;font-size:12px;font-weight:800;touch-action:manipulation;line-height:1">→</button>'+
+      '<button onclick="deleteStatusLine('+row+','+i+')" title="Delete line" style="width:30px;height:30px;flex-shrink:0;padding:0;border-radius:8px;background:rgba(240,68,68,.06);border:1px solid rgba(240,68,68,.22);color:rgba(248,113,113,.75);font-size:14px;font-weight:800;touch-action:manipulation;line-height:1">✕</button>'+
+    '</div>';
+  }).join("");
+  list.querySelectorAll("textarea").forEach(function(t){
+    t.style.height="auto";t.style.height=t.scrollHeight+"px";
+  });
+}
+
+function onStatusLineInput(el){
+  el.style.height="auto";el.style.height=el.scrollHeight+"px";
+  const row=parseInt(el.dataset.row);
+  if(_statusSaveTimer)clearTimeout(_statusSaveTimer);
+  _statusSaveTimer=setTimeout(function(){saveStatusLinesNow(row);},800);
+}
+
+function saveStatusLinesNow(row){
+  if(_statusSaveTimer){clearTimeout(_statusSaveTimer);_statusSaveTimer=null;}
+  const list=document.getElementById("status-blocks-list");
+  if(!list||parseInt(list.dataset.row)!==row)return;
+  const lines=Array.from(list.querySelectorAll("textarea[data-line-idx]"))
+    .map(function(t){return t.value.replace(/\r?\n/g," ").trim();})
+    .filter(function(l){return l.length>0;});
+  const joined=lines.join("\n");
+  const c=contacts.find(x=>x.row===row);
+  if(!c)return;
+  if((c.status||"")===joined)return;
+  const before=c.status||"";
+  c.status=joined;saveC();
+  logChange("status",c,"Status updated",{
+    kind:"fields",fields:{status:{before:before,after:joined}}
+  });
+  const s=currentSheet();
+  fetch(s.url||SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain"},
+    body:JSON.stringify({action:"updateCell",sheet:s.tab,row:row,field:"status",value:joined})
+  }).catch(function(){});
+}
+
+function addStatusLine(row){
+  const list=document.getElementById("status-blocks-list");
+  if(!list)return;
+  // Clear placeholder if visible
+  if(!list.querySelector("[data-line-idx]"))list.innerHTML="";
+  const nextIdx=list.querySelectorAll("[data-line-idx]").length;
+  const wrap=document.createElement("div");
+  wrap.style.cssText="display:flex;align-items:flex-start;gap:6px;margin-bottom:6px";
+  wrap.innerHTML='<textarea rows="1" data-line-idx="'+nextIdx+'" data-row="'+row+'" oninput="onStatusLineInput(this)" onfocus="window._swipeDisabled=true" onblur="window._swipeDisabled=false;saveStatusLinesNow('+row+')" onkeydown="if(event.key===&apos;Enter&apos;&&!event.shiftKey){event.preventDefault();this.blur();}" placeholder="New status line…" style="flex:1;background:rgba(255,255,255,.05);border:1.5px solid var(--gold);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-weight:600;outline:none;resize:none;overflow:hidden;line-height:1.4;font-family:inherit"></textarea>'+
+    '<button onclick="moveStatusLineToNotes('+row+','+nextIdx+')" style="width:30px;height:30px;flex-shrink:0;padding:0;border-radius:8px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.28);color:#a78bfa;font-size:12px;font-weight:800;touch-action:manipulation;line-height:1">→</button>'+
+    '<button onclick="deleteStatusLine('+row+','+nextIdx+')" style="width:30px;height:30px;flex-shrink:0;padding:0;border-radius:8px;background:rgba(240,68,68,.06);border:1px solid rgba(240,68,68,.22);color:rgba(248,113,113,.75);font-size:14px;font-weight:800;touch-action:manipulation;line-height:1">✕</button>';
+  list.appendChild(wrap);
+  const ta=wrap.querySelector("textarea");
+  if(ta)ta.focus();
+}
+
+function deleteStatusLine(row,lineIdx){
+  const list=document.getElementById("status-blocks-list");
+  if(!list||parseInt(list.dataset.row)!==row)return;
+  const rows=list.querySelectorAll("[data-line-idx]");
+  if(rows[lineIdx])rows[lineIdx].parentElement.remove();
+  saveStatusLinesNow(row);
+  setTimeout(function(){renderStatusBlocks(row);},50);
+}
+
+function moveStatusLineToNotes(row,lineIdx){
+  const list=document.getElementById("status-blocks-list");
+  if(!list)return;
+  const rows=list.querySelectorAll("textarea[data-line-idx]");
+  if(!rows[lineIdx])return;
+  const lineText=rows[lineIdx].value.trim();
+  if(!lineText){toast("Line is empty");return;}
+  const c=contacts.find(x=>x.row===row);
+  if(!c)return;
+  const before={notes:c.notes||"",status:c.status||""};
+  const stamp=new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  const noteAdd="["+stamp+"] "+lineText;
+  const newNotes=(c.notes||"").trim()?((c.notes.trim())+"\n\n"+noteAdd):noteAdd;
+  c.notes=newNotes;
+  const lines=Array.from(rows).map(function(t){return t.value.trim();});
+  lines.splice(lineIdx,1);
+  c.status=lines.filter(function(l){return l.length>0;}).join("\n");
+  saveC();
+  logChange("status",c,'Moved status → notes: "'+lineText.slice(0,60)+'"',{
+    kind:"fields",fields:{
+      status:{before:before.status,after:c.status},
+      notes:{before:before.notes,after:c.notes}
+    }
+  });
+  const s=currentSheet();
+  fetch(s.url||SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain"},
+    body:JSON.stringify({action:"updateFull",sheet:s.tab,row:row,notes:c.notes,status:c.status})
+  }).catch(function(){});
+  renderCard();
+  toast("→ Moved to notes");
+}
+
+function moveAllStatusToNotes(row){
+  const c=contacts.find(x=>x.row===row);
+  if(!c||!(c.status||"").trim())return;
+  const before={notes:c.notes||"",status:c.status||""};
+  const stamp=new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  const statusLines=String(c.status).split("\n").map(function(l){return l.trim();}).filter(Boolean);
+  const noteAdd=statusLines.map(function(l){return "["+stamp+"] "+l;}).join("\n");
+  const newNotes=(c.notes||"").trim()?((c.notes.trim())+"\n\n"+noteAdd):noteAdd;
+  c.notes=newNotes;
+  c.status="";
+  saveC();
+  logChange("status",c,"Moved all status → notes ("+statusLines.length+" line"+(statusLines.length===1?"":"s")+")",{
+    kind:"fields",fields:{
+      status:{before:before.status,after:""},
+      notes:{before:before.notes,after:c.notes}
+    }
+  });
+  const s=currentSheet();
+  fetch(s.url||SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain"},
+    body:JSON.stringify({action:"updateFull",sheet:s.tab,row:row,notes:c.notes,status:""})
+  }).catch(function(){});
+  renderCard();
+  toast("→ Moved "+statusLines.length+" line"+(statusLines.length===1?"":"s")+" to notes");
+}
 
 function markTouched(row){
   if(!row)return;
