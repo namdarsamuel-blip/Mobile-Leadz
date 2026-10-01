@@ -454,34 +454,6 @@ if(activeSheet>=SHEETS.length)activeSheet=0;
     </div>
     <div style="overflow-y:auto;padding:12px 14px 24px;-webkit-overflow-scrolling:touch">
       <div id="sms-template-list"></div>
-      <div style="margin-top:14px;border-top:1px solid rgba(45,37,80,.5);padding-top:14px" id="sms-ai-section">
-        <textarea id="ai-sms-intent" placeholder="Tap a chip below or type your own prompt — then tap the AI button" autocomplete="off" rows="2" style="width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(124,58,237,.25);border-radius:10px;padding:10px 12px;color:#fff;font-size:13px;box-sizing:border-box;font-family:inherit;margin-bottom:8px;resize:none;line-height:1.45;min-height:42px"></textarea>
-        <div style="font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.42);margin:2px 0 4px">💼 MCA flow</div>
-        <div id="ai-intent-chips" style="display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none;-ms-overflow-style:none">
-          <button onclick="setIntent(this,'qualify the lead — ask for email and how much they need')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">📧 Get email</button>
-          <button onclick="setIntent(this,'app sent — push them to finish the application')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">📤 Finish app</button>
-          <button onclick="setIntent(this,'need updated bank statements emailed over for fresh approval')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">🏛 Bank stmts</button>
-          <button onclick="setIntent(this,'approval is in — pull them onto a call before revealing the number, frame as call to pull better terms')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">✅ Approval → call</button>
-          <button onclick="setIntent(this,'pending decision — push for yes/no on the offer')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">⏳ Pending</button>
-          <button onclick="setIntent(this,'rejecting offer — rebuttal, keep deal alive, offer refi after 6 weeks')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">↩️ Rebuttal</button>
-          <button onclick="setIntent(this,'need driver license and voided check before sending contract')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">🪪 DL + VC</button>
-          <button onclick="setIntent(this,'sign the contract')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">✍️ Sign contract</button>
-          <button onclick="setIntent(this,'bank verification — lender will send a link or call them, check notes for which')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">🏦 Bank verify</button>
-          <button onclick="setIntent(this,'funding call — coordinate funder call to wire')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">📞 Funding call</button>
-          <button onclick="setIntent(this,'ghost chase — they keep not replying about the approval, vary the angle')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">👀 No reply</button>
-          <button onclick="setIntent(this,'post-funding renewal — about 50% paid in, refi for more capital')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">🔄 Renewal</button>
-        </div>
-        <div style="font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.42);margin:6px 0 4px">💳 0% Business Credit (Stacking)</div>
-        <div id="ai-intent-chips-cc" style="display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none;-ms-overflow-style:none">
-          <button onclick="setIntent(this,'CC stacking — get their credit score, ask about co-signer if low')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">📊 Credit score</button>
-          <button onclick="setIntent(this,'CC stacking — download tri-merge PDF from creditheroscore.com and email it to me. Click Expand All before saving.')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">📋 Email tri-merge</button>
-          <button onclick="setIntent(this,'CC stacking — chase the credit report, did they download and email it yet')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">⏳ Where's the report</button>
-          <button onclick="setIntent(this,'CC stacking — co-signer needed because credit is low')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">👥 Co-signer</button>
-          <button onclick="setIntent(this,'CC stacking — pre-approved, schedule a call with the specialist who will handle the deal')" class="ai-chip" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 11px;font-size:12px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;flex-shrink:0;touch-action:manipulation">✅ Pre-approved → specialist call</button>
-        </div>
-        <button onclick="generateAISMS()" style="width:100%;padding:13px;border-radius:12px;background:linear-gradient(135deg,rgba(124,58,237,.25),rgba(201,162,39,.15));border:1px solid rgba(124,58,237,.35);color:#a78bfa;font-size:14px;font-weight:800;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:8px" id="ai-sms-btn">✨ Write message with AI</button>
-        <div id="ai-sms-cards" style="display:none;margin-top:12px;flex-direction:column;gap:10px"></div>
-      </div>
     </div>
   </div>
 </div>
@@ -3494,131 +3466,157 @@ function openSMSPicker(ri){
   var bestOffer=c.approvals?(c.approvals.split("\n")[0].replace(/https?:\/\/\S+/g,"").trim()):"";
   var parsedOffer=parseOffer(bestOffer);
   var amt=parsedOffer?parsedOffer.amount:(bestOffer||"the approved amount");
-  // Which brand is the user texting from — matches the active sheet
-  // (Fundflexcap → "FCS", Lendiago → "Lendiago", etc.). Falls back to "FCS".
+  // Which brand is the user texting from — matches the active sheet.
+  // Lendiago sheet → "Lendiago" (shorthand for "Lendiago Capital Solutions"),
+  // Fundflexcap → "FCS", other → sheet label as-is.
   var brand=(function(){
     var lbl=(currentSheet().label||"").trim();
-    if(!lbl)return"FCS";
+    if(!lbl)return"Lendiago";
     if(/lendiago/i.test(lbl))return"Lendiago";
     if(/fundflex|fcs/i.test(lbl))return"FCS";
     return lbl;
   })();
 
   _smsTree={
+    // ─────────────────────────────────────────────────────────────────────
+    // MCA — Working Capital. Reactive flow: leads applied via email marketing.
+    // Voice: real person at a real company who's actively working their file.
+    // Not telemarketer. Not begging. Confident, warm, moves the deal forward.
+    // ─────────────────────────────────────────────────────────────────────
     mca:{label:"Working Capital (MCA)",icon:"💼",stages:{
-      opener:{label:"Opener",icon:"👋",templates:[
-        {l:"Quick opener",b:"Hi "+first+", it's Sam. I'm looking at your file for "+biz+" now. I can get this approved today without the usual broker runaround. What's your best email?"},
-        {l:"How much do you need?",b:"How much do you currently need for the business and what's the best email to reach you?"},
-        {l:"Available programs",b:"We offer Term Options, Lines of Credit, Consolidations, and more. We could even fund as soon as today. How much are you looking for and what's the best email?"},
-        {l:"UCC pre-approval",b:"This is a pre-approval based on the UCC filing on the business. I could have this approved for you today."},
-        {l:"Best email?",b:"What's the best email to send the required information to? I could have you approved within 2 hours and funded by end of today."},
+      intro:{label:"Intro — Got the App",icon:"👋",templates:[
+        // One-text intro (identifies me + confirms app + opens the door for details)
+        {l:"Intro — one text",b:"Hey "+first+", Sam from "+brand+" here. Just got the application for "+biz+" and I'm reviewing it now before it goes to underwriting. If there's anything specific about the business you want me to pass along — recent dips, big month coming up, what the funds are for — send it over here. Helps me position it right from the start."},
+        {l:"Intro — one text (short)",b:"Hey "+first+", this is Sam from "+brand+". Got your application for "+biz+" — reviewing it now. Anything specific you want underwriting to know, send it here so I can factor it in."},
+        {l:"Intro — one text (no biz name)",b:"Hey "+first+", Sam from "+brand+". Got the application and I'm reviewing it before it goes to underwriting. Anything specific about the business you want me to include? Send it here."},
+
+        // Two-text intro (split): #1 = who I am + confirmation, #2 = the ask
+        {l:"Intro — split 1 of 2 (who I am)",b:"Hey "+first+", this is Sam from "+brand+" — just received your application for "+biz+". Reviewing it now."},
+        {l:"Intro — split 2 of 2 (the ask)",b:"Before I send it to underwriting, is there anything specific about the business you want me to pass along? Anything that helps context — like what the funds are for, upcoming contracts, recent dips — just makes it easier to position for the best terms."},
+
+        // Variants
+        {l:"Got app + statements too",b:"Hey "+first+", Sam from "+brand+". Got your application and bank statements for "+biz+" — everything's in. Sending to underwriting shortly. If there's anything specific you want me to factor in, send it here first."},
+        {l:"Thanks for applying",b:"Hey "+first+", thanks for applying with "+brand+". I'm Sam — I'll be handling your file. Reviewing everything now and will have an update soon."},
       ]},
-      app_sent:{label:"Application Sent",icon:"📋",templates:[
-        {l:"App sent",b:"Just sent that application over to your email. It's short and has a spot for you to upload your bank statements at the end. Get that finished now and I'll have my team start working on an approval immediately."},
-        {l:"Backup link",b:"If you don't see the email use this link to keep things moving: https://form.jotform.com/253154501377151 Once it's in I'll have an offer for you in about an hour."},
-        {l:"Tonight deadline",b:"Wanted to remind you about the funding app. If you get it done tonight I can line up offers by tomorrow and have money in your account the same day. https://form.jotform.com/253154501377151"},
-        {l:"End of day push",b:"If you get the application in today you can get the offer and even funded by end of day. Let me know if you need help with anything. https://form.jotform.com/253154501377151"},
-        {l:"I'm on standby",b:"I'm on standby. Send it whenever you can and I'll expedite this for you ASAP."},
-        {l:"Confirm received",b:"Received. Sending everything over to my team now. I'll be in touch soon."},
+
+      review:{label:"Review / Underwriting",icon:"🔎",templates:[
+        {l:"In underwriting now",b:"Quick update "+first+" — your file for "+biz+" is in underwriting. I'll shoot you a text as soon as I hear back."},
+        {l:"Should hear back today",b:"Should hear back from underwriting today. I'll text you the moment I have something."},
+        {l:"Waiting on last doc",b:first+" underwriting flagged they need one more thing before they can issue a decision. Can you send over [specify] when you get a sec?"},
+        {l:"Need updated statements",b:"Hey "+first+" — to get this across the finish line underwriting needs the most recent month of bank statements. Can you email those over? Takes 2 min to pull from online banking."},
       ]},
-      followup:{label:"Follow Up",icon:"🔄",templates:[
-        {l:"Did you submit?",b:"Hey "+first+" good morning. I didn't see your application this morning. Just want to make sure it didn't get lost. Did you submit?"},
-        {l:"Checking in",b:"Checking in to see if you still need the funding. What's the best email to send the application to? Would love to get this done and have funds wired by tomorrow."},
-        {l:"Not here to waste time",b:"Not here to waste your time. Just let me know what email to send the information to so we can make this happen for you today."},
-        {l:"New month refresh",b:"Hey "+first+" it's a new month. I need your updated bank statements so I can refresh your file. My underwriters are looking for a reason to improve the terms so let's get those over today."},
-        {l:"End of month push",b:"We're currently offering aggressive terms to close out the month. If you still need funds for the business now is the best time to apply. https://form.jotform.com/253145486709162"},
-        {l:"Been a while",b:"Hey it's been a while. You mentioned you were looking for capital. What's the best email to send the application to right now?"},
+
+      approved:{label:"Approval → Call",icon:"✅",templates:[
+        // Primary — approval + ask for call
+        {l:"Approval + call (hero)",b:"Hey "+first+", Sam from "+brand+". Good news — got "+biz+" approved. Give me a quick call when you're free so I can walk you through the terms and make sure we structure it the way you need it."},
+        {l:"Approval + why call matters",b:"Approval came in for "+biz+". Rather than text you the number cold, let's hop on a quick call so I can walk you through it — there are a few ways we can structure it and I want to make sure we pick the one that actually fits what you're trying to do."},
+        // Scenario where no intro was sent — approval doubles as the intro
+        {l:"Intro + approval (first contact)",b:"Hey "+first+", this is Sam from "+brand+" — I've been working on your file for "+biz+". Good news, we got an approval. Give me a quick call when you have a sec and I'll walk you through everything."},
+        {l:"Approval + early payment discount angle",b:"Got "+biz+" approved. Let's jump on a quick call — I want to make sure you understand the early payment discount piece because it can save you real money on the payback."},
+        // Softer approval nudges
+        {l:"When works today?",b:first+" — what time today works for a quick call? 10 min max, just want to walk through the approval."},
+        {l:"Still holding the approval",b:"Hey "+first+" — still holding your approval open. When you get a sec, give me a quick ring and I'll walk you through it."},
+        // The "you did everything via email" template — kept
+        {l:"You did everything — call me",b:"Hey "+first+", Sam from "+brand+". Saw your application came through and bank statements are in. I've already got you preapproved. Give me a quick call when you get a sec so we can lock in what you actually need — easier to make the deal work for you if I hear it in your words."},
       ]},
-      approved:{label:"Approval",icon:"✅",templates:[
-        {l:"Soft pitch (have approval)",b:"Hey "+first+" I have an approval at "+amt+" ready to go. Does that work for what you were looking to do?"},
-        {l:"You did everything — call me",b:"Hey "+first+", this is Sam with "+brand+". Saw you completed the application through the link and your bank statements came through. I already have you preapproved. Give me a quick call when you get a sec so I can lock in what you actually need — that way when I send it back to underwriting we can get the early payment discount built in for you."},
-        {l:"Everything's in, need 2 min",b:first+" I've got the app + statements you emailed over. You're basically preapproved. I just need 2 min on the phone to hear what you're actually trying to do with the money so I can position it the right way. Free to talk?"},
-        {l:"Approval + call",b:"Great news. I got "+biz+" approved for "+amt+". Let's hop on a quick call so I can explain the early payment discounts — it'll save you a lot on the payback. You free now?"},
-        {l:"Approval ready — get on call",b:"Good morning "+first+"! I've been working on getting these funds approved for you. Let's hop on a call today to go over everything."},
-        {l:"Better terms on call",b:"Got the approval back "+first+". Want to get on a quick call so I can understand the business better — there's a real chance I can pull better terms or more capital than what's on paper. 5 mins, when works?"},
-        {l:"Hold the line — pre-contract",b:"I can hold the "+amt+" approval but I need to know if we're moving. Otherwise I'll release it back to underwriting."},
-        {l:"Full offer breakdown",b:"Alright, based on everything we talked about, here's what fits your cash flow and gets you moving today:\n\nFunding Amount: "+amt+"\nTerm Length: [X] days\nDaily Payments: $[X]\nPayback Amount: $[X]\n\nTake a look and tell me if you want me to lock it in. Once you give me the green light, I'll get everything lined up for funding."},
-        {l:"Approval still open",b:"Just a heads up "+first+" — you're still approved for the funds we discussed. I've tried reaching out a few times and haven't heard back. If you want to move forward let me know. Otherwise I'll close this out and reallocate the approval."},
-      ]},
+
       pending:{label:"Pending Decision",icon:"⏳",templates:[
-        {l:"Where are we at",b:first+" where are we at on the "+amt+" we discussed? Just need a yes/no so I know whether to start contracts."},
-        {l:"Holding the offer",b:"Just checking in — I'm still holding the "+amt+" approval for you but the terms are tied to today's underwriter window. What are you thinking?"},
-        {l:"Help me think it through",b:first+" if there's anything on the fence, let me know what's on your mind. I'd rather talk it through than have you sit on it."},
-        {l:"Move or not",b:"Let me know if we're moving on this or not "+first+". Either way is fine — just need to know so I can manage the file."},
+        {l:"Where are we at?",b:first+" where are we at on the approval? Just need a quick yes/no so I know how to move the file."},
+        {l:"Holding terms open",b:"Hey "+first+" — still holding the terms open for you. Let me know if you want to move forward or if there's anything you want me to adjust."},
+        {l:"Talk it through",b:"If there's anything on the fence let me know what's on your mind — rather talk it through than have you sit on it."},
       ]},
-      reject_offer:{label:"Pushback / Refi Path",icon:"♻️",templates:[
-        {l:"What changes work?",b:"What changes would make this deal work for you "+first+"? Let me know and I'll get my team to see what we can adjust."},
-        {l:"Refi after 6 weeks",b:"If the daily payments seem high, we can always work on refinancing after 6 weeks of payments to make the terms longer and more manageable. Goal is to get funded today and adjust from there."},
-        {l:"Tell me realistic",b:"Tell me something realistic we can adjust and I'll have my team look at it right away."},
-        {l:"This is what underwriting put up",b:"This is what underwriting was willing to put on the table this round. Take a look and let me know if you want me to lock it in — and I'll get the funding lined up."},
-        {l:"Lock it, then refi",b:"Lock it in today "+first+", ride it for 6 weeks, then we refi for better terms. That's how most of my clients play it."},
-        {l:"Can't approve unless paid back",b:"The only way we can't approve you for another loan later is if the current one isn't paid back. Let's discuss how we can make this current offer work for you."},
+
+      pushback:{label:"Pushback / Rework",icon:"↩️",templates:[
+        {l:"What changes work?",b:"What would make this work for you "+first+"? Tell me what's realistic and I'll take it back to underwriting."},
+        {l:"Refi after 6 weeks",b:"If the daily is heavy, standard play is to take this now, build 6 weeks of history, then refi for longer terms + lower daily. Gets you funded today and better terms soon."},
+        {l:"Best underwriting put up",b:"This is what underwriting put on the table this round. Want me to lock it in, or should I try to rework it?"},
       ]},
-      dlvc:{label:"DL & Voided Check",icon:"🪪",templates:[
-        {l:"Need DL + VC",b:first+" before I can send the contract over I need a picture of your driver's license and a voided check (or motor check). Send those over and I'll fire the contract right after."},
-        {l:"DL + VC — Sam's voice",b:"Send me pictures of your driver's license and a voided check so I can send you the contract."},
-        {l:"Bank letter alternative",b:"As an alternative to a voided check, you can provide a screenshot of your bank account showing the routing number, account number, and your business name. Or a bank letter that includes the same details — works either way."},
-        {l:"Bank screenshot specs",b:"A bank letter or a screenshot from your bank's online portal will work, as long as the image clearly shows: business name, account number, and routing number. All three need to be visible in the same image."},
-        {l:"Just the DL",b:"Just need a clear picture of your driver's license to move on the contract."},
-        {l:"Just the VC",b:"Need a voided check (or motor check) on file before I can release the contract. Quick photo works."},
-        {l:"Reminder DL/VC",b:first+" still waiting on the driver's license and voided check — once those are in, contract goes out same minute."},
+
+      dlvc:{label:"DL + Voided Check",icon:"🪪",templates:[
+        {l:"Need DL + VC",b:first+" — before I can release the contract I need a photo of your driver's license and a voided check. Send both here and I'll fire the contract right after."},
+        {l:"Bank letter alternative",b:"If you don't have a voided check handy, a screenshot of your online banking showing: business name, routing number, and account number all in the same image works too. Or a bank letter with the same info."},
+        {l:"Reminder — DL/VC",b:first+" still waiting on the DL and voided check — once those come through, contract goes out same minute."},
       ]},
+
       contract:{label:"Contracts",icon:"✍️",templates:[
-        {l:"Contracts sent (text 1)",b:"Just sent the contracts for "+amt+" to your email."},
-        {l:"Contracts sent (text 2)",b:"Signing doesn't lock you in for the deal yet. It just secures this specific offer while we finish the final steps. You can still change your mind anytime until we send the wire but this locks in your rate."},
-        {l:"Contract clarity",b:"Just wanted to clarify one thing. If these docs we sent over are signed it does not lock you in for the deal. There are still a few steps before we fund and you can change your mind anytime until we send the wire. But signing locks you in at this offer so it's to your benefit."},
-        {l:"Early payoff discount",b:"We also offer really nice early payment discounts. So whenever you're ready to pay this off we'll be applying discounts and you won't be paying the full amount back."},
-        {l:"Cold contract follow up",b:first+" I haven't seen those contracts come back yet. I can only hold this "+amt+" offer for so long before the funds are reallocated to the next file. Are we getting this funded today?"},
+        {l:"Contracts sent",b:"Just sent the contracts over to your email "+first+". Take a look when you get a sec."},
+        {l:"Signing ≠ final",b:"Quick note — signing doesn't lock you into funding yet. It just locks in these terms while we finish the last steps. You can still back out until the wire goes out, but signing holds the rate."},
+        {l:"Early payoff discount",b:"Also — "+brand+" offers early payment discounts. If you pay this off ahead of schedule you don't pay the full payback. Worth keeping in mind."},
+        {l:"Contract chase",b:first+" haven't seen the contracts come back yet — can only hold the terms so long before underwriting reallocates. We funding today?"},
       ]},
+
       bank_verif:{label:"Bank Verification",icon:"🏦",templates:[
-        {l:"Send verification link",b:"Now that the contract is signed we just need a quick bank verification — I'll send you a secure link. Takes a minute and we're done."},
-        {l:"Link is in your inbox",b:first+" the bank verification link is in. Knock that out and we're at the wire today."},
-        {l:"Funder will call to wrap up",b:"Last step "+first+" — my funder is going to hop on a quick call with you to wrap up the verification and finalize. What time today works?"},
-        {l:"Be ready for the call",b:"Funder will call you at [insert time] to wrap up the bank verification and funding. Quick 5-minute call. Pick up and we're funded same day."},
-        {l:"Link or call?",b:first+" want to knock out the bank verification with a link, or have my funder hop on a quick call with you? Either works — whichever's easier."},
-        {l:"Push verification",b:"Still need that bank verification done "+first+" — can't push to wire without it. Link or call, your call."},
+        {l:"Verification link coming",b:"Contracts signed ✓ — last step is a quick bank verification. Sending you a secure link now, takes about a minute."},
+        {l:"Funder call to wrap up",b:"Last step "+first+" — my funder is going to hop on a quick call with you to wrap up verification. What time today works?"},
+        {l:"Link or call?",b:first+" — want to knock out bank verification with a link, or have my funder hop on a quick call? Either works, whichever's easier."},
+        {l:"Push verification",b:"Still need bank verification done "+first+" to push to wire. Link or call — your pick."},
       ]},
+
       funded:{label:"Funded / Renewal",icon:"🎉",templates:[
         {l:"Funded ✅",b:"Funded ✅ Pleasure working with you "+first+". Let me know when the wire hits."},
-        {l:"Funds on the way",b:"Funds are on the way "+first+"! Glad we could get this done for "+biz+". Let me know when you see it hit the account."},
-        {l:"Check in 1 month",b:"Hey "+first+" how's the deployment of capital going? Anything else "+biz+" needs?"},
-        {l:"50% paid — refi",b:"Hey "+first+" you're about halfway through the payback. Want me to look at a refinance and pull more capital out? Most of my clients hit this point and re-up — usually with better terms."},
-        {l:"Renewal offer",b:"Hey "+first+" you've been solid on the payments. I just got the green light to offer you a renewal with better terms and a higher limit. How much do you need for the business right now?"},
+        {l:"Funds on the way",b:"Funds are on the way "+first+"! Glad we could get this done for "+biz+". Let me know when you see it in the account."},
+        {l:"1-month check-in",b:"Hey "+first+" — how's the deployment going? Anything else "+biz+" needs on this round?"},
+        {l:"50% paid — refi offer",b:"Hey "+first+" — you're about halfway through the payback. Want me to look at a refi and pull more capital out? Usually better terms the second round."},
+      ]},
+
+      checkin:{label:"Check-In / Quiet Lead",icon:"👋",templates:[
+        {l:"Quick nudge",b:"Hey "+first+" — just circling back on your file for "+biz+". Still want to move forward or should I close it out?"},
+        {l:"Still here when ready",b:"No pressure "+first+" — just keeping the file open on my end. If you want to pick it back up whenever, just text me here."},
+        {l:"New month, fresh look",b:"Hey "+first+" — it's a new month. If you want me to take a fresh look at your file for "+biz+", send me your most recent bank statement and I'll pull new terms."},
       ]},
     }},
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Credit Cards (0% stacking). Reactive flow: lead sent credit report in,
+    // we review with bank team, soft approval → schedule call from 631 number.
+    // ─────────────────────────────────────────────────────────────────────
     cc:{label:"0% Business Credit",icon:"💳",stages:{
-      opener:{label:"Opener",icon:"👋",templates:[
-        {l:"Quick opener",b:"Hi "+first+", it's Sam. I have a 0% APR credit line available for your business. What's your credit score looking like? If it's 680+ we can move fast."},
-        {l:"Open to hearing it?",b:"Hey "+first+", if I could get you a $150k business credit line at 0% interest would you be open to hearing about it? Only thing needed is a 680+ credit score — but even if you're not there yet we can work around it."},
-        {l:"No daily payments",b:"Hey "+first+", Sam here. Business credit lines up to 150k at 0% APR — no daily payments, no factor rates. Got a few mins?"},
-        {l:"Still available",b:first+" — that 150k at 0% APR is still on the table. You in?"},
+      intro:{label:"Intro — Got Report",icon:"👋",templates:[
+        // Primary intro — got their credit report
+        {l:"Got the report — how much?",b:"Hey "+first+", Sam from "+brand+" here. Got the credit report in — reviewing with my bank team now. How much are you looking to get for the business?"},
+        {l:"Got the report — reviewing",b:"Hey "+first+", Sam from "+brand+". Credit report came through — I'm sending it over to my bank team now. I'll follow up as soon as I hear back from them."},
+        {l:"Got the report + known amount",b:"Hey "+first+", Sam from "+brand+". Got the credit report. I see you're looking for "+amt+" — sending to my bank team to review now, I'll follow up as soon as I have an answer."},
+
+        // Got the application (before credit report)
+        {l:"Got the application",b:"Hey "+first+", Sam from "+brand+" here. Just received your application. Next step is pulling your credit so my team can see what we can line up — I'll send you the link to pull it over here, totally soft pull."},
+
+        // Two-text split version
+        {l:"Intro — split 1 of 2",b:"Hey "+first+", this is Sam from "+brand+" — got your credit report in."},
+        {l:"Intro — split 2 of 2",b:"Sending it to my bank team to review. How much are you trying to get lined up for the business? Helps me point them in the right direction."},
       ]},
-      qualify:{label:"Qualification",icon:"📊",templates:[
-        {l:"Credit score",b:"What is your current credit score?"},
-        {l:"Available for a call?",b:"You available for a quick call now or later today?"},
-        {l:"Score workaround",b:first+" even if your score isn't at 680 yet there's still a path. Let me know where you're at and I'll tell you exactly what we can do."},
+
+      review:{label:"Review with Bank Team",icon:"🔎",templates:[
+        {l:"With bank team now",b:"Report's with my bank team now "+first+" — they usually turn these around same day. I'll ping you the second I hear something."},
+        {l:"Reviewing today",b:"Reviewing with the team today "+first+". Will have an update for you shortly."},
+        {l:"Need one more thing",b:first+" team flagged they need one more piece of info before they can finalize — can you send over [specify]?"},
       ]},
-      trimerge:{label:"Credit Report",icon:"📋",templates:[
-        {l:"Pull tri-merge",b:"Like we discussed I need to see your tri-merge report to see which lines we can hit. You can grab it at creditheroscore.com. Just download the PDF and text it here."},
-        {l:"Follow up on report",b:"Did you get a chance to pull that report? I have a window open with my underwriters and I'd rather get you in now while the 0% terms are still this strong."},
-        {l:"Co-signer reports",b:first+" have you and your co-signer both pull tri-merge reports and send them over. You can get them at creditheroscore.com."},
-        {l:"Expand All tip",b:"When you download the PDF make sure to click Expand All first so I can see the full report."},
-        {l:"Score too low",b:first+" your score isn't where it needs to be right now. Do you have a co-signer with a stronger profile? If not let's talk about a plan to get there."},
+
+      soft_approval:{label:"Soft Approval → Schedule",icon:"✅",templates:[
+        // Primary scheduling messages — bank team calls from 631 number
+        {l:"Soft approval — pick a time",b:"Good news "+first+" — soft approval came through. My bank team wants to hop on a quick call to finalize. They'll call from a 631 number. Does today around 3pm, tomorrow 11am, or tomorrow 2pm work best?"},
+        {l:"Soft approval — open window",b:"Good news "+first+" — soft approval is in. My bank team needs to hop on a quick call to finalize. They'll be calling from a 631 number. What time works today or tomorrow?"},
+
+        // Softer variants
+        {l:"Soft approval — short",b:"Soft approval came in "+first+" ✅ Bank team wants to jump on a quick call to wrap it up — they call from a 631 number. What time works today or tomorrow?"},
+        {l:"Late day — tomorrow",b:"Soft approval is in "+first+". Getting a little late today so let's set the call for tomorrow — bank team will call you from a 631 number. Does 11am, 12 noon, or 2pm work?"},
+        {l:"ASAP",b:"Approval came in "+first+" — want to jump on with the bank team now? They'll call from a 631 number."},
       ]},
-      approved:{label:"Approved",icon:"✅",templates:[
-        {l:"Approval ready",b:first+" you got approved. I have the details ready. When can you jump on a quick call so I can walk you through it?"},
-        {l:"You did everything — call me",b:"Hey "+first+", this is Sam with "+brand+". Saw you completed the application through the link — everything's in. I've already got you preapproved on the credit side. Give me a quick call so I can walk you through the terms and lock in what actually fits what you're trying to do."},
-        {l:"Time sensitive",b:first+" approval came back. These offers have expiration windows so let's move on this today."},
+
+      call_scheduled:{label:"Call Confirmed / Reminder",icon:"📞",templates:[
+        {l:"Confirm the time",b:"Confirmed "+first+" — bank team will call you [TIME] from a 631 number. Just pick up when you see it, it's them."},
+        {l:"Heads up — call in 15",b:"Heads up "+first+" — bank team calling you in about 15 min from a 631 number. Please pick up when you see it."},
+        {l:"Missed call reschedule",b:first+" — bank team tried to reach you but no answer. When's a better time? Just need another window and I'll get them to try again."},
       ]},
-    }},
-    post:{label:"Post Funding",icon:"🔃",stages:{
-      funded:{label:"Funded",icon:"🎉",templates:[
-        {l:"Funds on the way",b:"Funds are on the way "+first+"! Glad we could get this done for "+biz+". Let me know when you see it hit the account."},
-        {l:"Great working with you",b:first+" it was great working with you. Let me know if you need anything else down the road."},
+
+      followup:{label:"Follow Up / Quiet",icon:"🔄",templates:[
+        {l:"Did you pull the report?",b:"Hey "+first+" — did you get a chance to pull the credit report yet? Just checking in."},
+        {l:"Just circling back",b:"Just circling back "+first+" — want to keep this moving on your end? No pressure, just want to know whether to leave the file open."},
+        {l:"Window still open",b:first+" the 0% window is still open on my end. If you want to pick this up again, just reply here and I'll pull you back into the queue."},
       ]},
-      renewal:{label:"Renewal",icon:"🔄",templates:[
-        {l:"Renewal offer",b:"Hey "+first+" you've been solid on the payments. I just got the green light to offer you a renewal with better terms and a higher limit. How much do you need for the business right now?"},
-        {l:"More capital",b:first+" you may qualify for additional capital on top of what you have. Worth a quick call to go over the numbers."},
+
+      approved:{label:"Approved / Funded",icon:"🎉",templates:[
+        {l:"Approved ✅",b:"Approved ✅ Cards are in the works "+first+" — great work. I'll let you know once the lines are ready to use."},
+        {l:"All set",b:first+" everything's finalized. Welcome aboard — any questions after this just text me here."},
       ]},
     }},
   };
@@ -3664,327 +3662,8 @@ function sendCustomSMS(){}
 
 function closeSMSPicker(){$("sms-ov").style.display="none";_smsIdx=null;}
 
-// Tap a chip → fill the intent input and briefly highlight it.
-// Does NOT auto-generate — user reviews/edits the prompt then taps the AI button.
-function setIntent(btn, text){
-  const input=$("ai-sms-intent");
-  if(input){
-    input.value=text;
-    // Auto-grow the textarea to fit pasted content
-    input.style.height="auto";
-    input.style.height=Math.min(input.scrollHeight,220)+"px";
-    // Focus + place cursor at end so they can edit immediately
-    try{input.focus();input.setSelectionRange(text.length,text.length);}catch{}
-  }
-  if(btn){
-    const orig={bg:btn.style.background,border:btn.style.borderColor,color:btn.style.color};
-    btn.style.background="rgba(124,58,237,.25)";
-    btn.style.borderColor="rgba(124,58,237,.5)";
-    btn.style.color="#c4b5fd";
-    setTimeout(()=>{btn.style.background=orig.bg;btn.style.borderColor=orig.border;btn.style.color=orig.color;},600);
-  }
-  // Pulse the AI button briefly so they know what to tap next
-  const aiBtn=$("ai-sms-btn");
-  if(aiBtn){
-    aiBtn.style.transition="all .15s";
-    aiBtn.style.transform="scale(1.02)";
-    aiBtn.style.boxShadow="0 0 24px rgba(124,58,237,.5)";
-    setTimeout(()=>{aiBtn.style.transform="";aiBtn.style.boxShadow="";},400);
-  }
-}
+// (AI SMS generator removed — see git history. Templates are the only path now.)
 
-function sendAISMS(idx){
-  if(_smsIdx===null)return;
-  const c=contacts[_smsIdx];
-  const phone=(c.phone||"").replace(/\D/g,"");
-  if(!phone)return;
-  const ta=$("ai-sms-ta-"+idx);
-  const body=ta?ta.value.trim():"";
-  if(!body){toast("AI message not ready yet");return;}
-  window.open("sms:"+phone+"&body="+encodeURIComponent(body),"_self");
-  closeSMSPicker();
-  logChange("sms",c,"AI SMS: "+body.slice(0,60));
-}
-
-async function generateAISMS(){
-  if(_smsIdx===null)return;
-  const btn=$("ai-sms-btn"),cards=$("ai-sms-cards");
-  if(!btn||!cards)return;
-  const c=contacts[_smsIdx];
-  if(!c)return;
-  btn.innerHTML="✨ Writing 3 drafts…";btn.disabled=true;
-
-  // Clear previous drafts immediately and show 3 loading skeletons so user knows new content is coming
-  cards.innerHTML='<div style="background:rgba(239,68,68,.04);border:1px dashed rgba(239,68,68,.25);border-radius:14px;padding:16px;color:rgba(252,165,165,.5);font-size:12px;font-weight:700;text-align:center;animation:pulse 1.4s ease-in-out infinite">🎯 Generating direct push…</div>'
-    +'<div style="background:rgba(59,130,246,.04);border:1px dashed rgba(59,130,246,.25);border-radius:14px;padding:16px;color:rgba(147,197,253,.5);font-size:12px;font-weight:700;text-align:center;animation:pulse 1.4s ease-in-out infinite;animation-delay:.15s">💬 Generating soft check-in…</div>'
-    +'<div style="background:rgba(201,162,39,.05);border:1px dashed rgba(201,162,39,.3);border-radius:14px;padding:16px;color:rgba(252,211,77,.5);font-size:12px;font-weight:700;text-align:center;animation:pulse 1.4s ease-in-out infinite;animation-delay:.3s">⚡ Generating value / urgency…</div>';
-  cards.style.display="flex";
-
-  // ── Build comprehensive lead context ──
-  const first=(c.name||"").split(" ")[0]||"there";
-  const statusLabel=(c.leadStatus||"").replace(/^[\d.]+\.?\s*/,"").trim();
-  const today=new Date();
-  const todayStr=today.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
-  const intentInput=$("ai-sms-intent");
-  const intent=intentInput?intentInput.value.trim():"";
-
-  // Wait timer state
-  let waitInfo="None";
-  if(c.waitUntil){
-    const m=String(c.waitUntil).match(/(\w+\s+\d+,\s+\d{4}\s+at\s+[\d:apmAPM\s]+)/);
-    let expired=false;
-    if(m){const d=new Date(m[1]);if(d&&!isNaN(d))expired=d<today;}
-    waitInfo=c.waitUntil+(expired?" [EXPIRED — ready to call]":" [ACTIVE — do not reach out yet]");
-  }
-  // Reminder state
-  let reminderInfo="None";
-  if(c.reminder){
-    const m=String(c.reminder).match(/(\w+\s+\d+,\s+\d{4}\s+at\s+[\d:apmAPM\s]+)/);
-    let due=false;
-    if(m){const d=new Date(m[1]);if(d&&!isNaN(d))due=d<today;}
-    reminderInfo=c.reminder+(due?" [DUE NOW]":" [scheduled for future]");
-  }
-
-  // All offers (not just best)
-  const allOffers=c.approvals?c.approvals.split("\n").map(l=>l.replace(/https?:\/\/\S+/g,"").trim()).filter(Boolean).join("\n"):"None on the table yet";
-
-  const promptText=
-"You are Sam Silva, a confident MCA broker at FCS. You text merchants to move deals forward. Your style: direct, human, confident, never desperate, never salesy. You write like you're already on their deal team. Use contractions, short sentences, conversational tone.\n"+
-"\nIDENTITY RULES:"+
-"\n- The shop is FCS. Reference it by name only if it adds value (e.g. 'Sam from FCS')."+
-"\n- When signing or self-referencing in a text, use 'Sam' only — never the last name 'Silva'."+
-"\n- Never invent or mention any other brokerage name. Never say 'Flip Finance' or any other shop."+
-"\n- Never mention any other broker name (no 'Sam Moretti' or made-up identities)."+
-"\n\n══ VOICE RULES — READ THESE TWICE ══"+
-"\n1. BE DIRECT. Tell the merchant exactly what to do and what they get. No teasing. No vague hooks."+
-"\n2. NO CHEESY LINES. The merchant is busy and skeptical. Cute phrases insult their intelligence."+
-"\n3. SPECIFICITY > CLEVERNESS. 'Download the PDF and email it to me' beats 'pull credit and we'll see magic.'"+
-"\n\n══ BANNED PHRASES — DO NOT USE — IF YOU CATCH YOURSELF WRITING THESE, REWRITE ══"+
-"\n- 'I'll show you the paydown' / 'show you the playdown' (merchant doesn't know what that means)"+
-"\n- 'That's our next move' (cheesy)"+
-"\n- 'Let me work my magic'"+
-"\n- 'I have a feeling' / 'gut tells me'"+
-"\n- 'Just checking in' (cliché — already banned)"+
-"\n- 'I hope this finds you well' (already banned)"+
-"\n- 'Reach out' as a verb in a follow-up ('I've been reaching out')"+
-"\n- 'Circle back' / 'circling back'"+
-"\n- 'Touch base'"+
-"\n- 'Quick question' as an opener (it's never quick)"+
-"\n- Any line that hints at value without naming it — say what they get, don't dangle it"+
-"\n\n══ HOW TO ASK FOR THE TRI-MERGE (precise wording matters) ══"+
-"\n- Don't say 'pull credit' — that's vague."+
-"\n- Say: 'download the credit report PDF from creditheroscore.com and send it to my email.'"+
-"\n- Email is the primary path. Texting the PDF or uploading via secure link both work — only mention these as alternatives if context suggests email isn't working."+
-"\n\n══ SAM'S REAL VOICE — examples (this is how he actually writes) ══"+
-"\n  — 'Hey I have an approval at 20k ready to go. Does that work for what you were looking to do?'"+
-"\n  — 'Just a heads up you're still approved for the funds we discussed. I've tried reaching out a few times and haven't heard back.'"+
-"\n  — 'What changes would make this deal work for you? Let me know and I'll get my team to see what we can adjust.'"+
-"\n  — 'I can hold the 15k at 375 daily but I need to know if we're moving. Otherwise I'll release it back to underwriting.'"+
-"\n  — 'You went quiet on me. Did something change with the 15k or did the timing just shift?'"+
-"\n\nTODAY'S DATE: "+todayStr+
-"\n\n══ LEAD ══"+
-"\nName: "+(c.name||"unknown")+
-"\nFirst name to use: "+first+
-"\nCompany: "+(c.company||"unknown")+
-"\nIndustry: "+(c.industry||"unknown")+
-"\nIn business since: "+(c.businessDate||"unknown")+
-"\nPhone on file: "+(c.phone?"yes":"no")+
-"\nDL/VC on file: "+(c.dlVc||"unknown")+
-"\nFederal tax ID on file: "+(c.federalTax||"unknown")+
-"\nCredit score: "+(c.credit||"unknown")+
-"\nTags: "+(c.tags||"none")+
-"\n\n══ DEAL STATE ══"+
-"\nLead status (where in the pipeline): "+(statusLabel||"unknown")+
-"\nStatus note (most current detail): "+(c.status||"none")+
-"\nWhat the merchant wants: "+(c.wants||"not specified")+
-"\nWait timer: "+waitInfo+
-"\nReminder: "+reminderInfo+
-"\n\n══ CONVERSATION HISTORY (notes) ══\n"+(c.notes||"No prior notes")+
-"\n\n══ ALL OFFERS ON THE TABLE ══\n"+allOffers+
-"\n\n══ HOW SAM WORKS THE MCA FLOW (your playbook) ══"+
-"\nThe MCA pipeline has clear stages. Match the message to exactly where the lead is. Each text moves them to the NEXT stage — not the whole deal."+
-"\n\nSTAGE 1 — INTERESTED (new lead)"+
-"\nWhat just happened: they showed interest in capital."+
-"\nWhat we need from them: their email + how much they need."+
-"\nMessage move: ask for the email and the amount. Direct."+
-"\n\nSTAGE 2 — EMAIL CAPTURED → SEND APPLICATION"+
-"\nWhat just happened: we got their email and sent the JotForm application to it."+
-"\nApp link: https://form.jotform.com/253154501377151"+
-"\nWhat we need from them: complete the application today."+
-"\nMessage move: confirm the app went out, push them to finish it now. If they got the email mention what's in it (short form + bank statement upload at the end)."+
-"\n\nSTAGE 3 — APP SENT, NOT FINISHED YET → CHASE THE APPLICATION"+
-"\nWhat just happened: they got the link and went quiet on filling it out."+
-"\nWhat we need from them: finish the form."+
-"\nMessage move: chase. Direct line on what's blocking, what they get when it's in."+
-"\n\nSTAGE 4 — UPDATED BANK STATEMENTS (refresh for fresh offer)"+
-"\nWhen this applies: they applied weeks/months ago, statements are stale, OR a new month started and underwriting wants the fresh look."+
-"\nWhat we need from them: bank statements from the last 1-3 months emailed over."+
-"\nMessage move: 'Need your last [N] months of bank statements emailed to me — underwriting wants a fresh look so I can pull better terms.' Frame the refresh as their upside, not our paperwork."+
-"\n\nSTAGE 5 — APPROVAL IS IN → GET THEM ON THE CALL"+
-"\nWhat just happened: underwriting came back with an approval."+
-"\nWhat we want: them on the phone. Selling the deal happens on the call, not in text."+
-"\nTWO ANGLES — pick based on context:"+
-"\n  ANGLE A (DEFAULT — pre-reveal, pull-for-call): don't drop the number yet. 'Got an approval back for "+(c.company||"the business")+" — before I lock it in with underwriting, hop on a quick call so we can talk through it. There's a real chance I can pull more favorable terms once I understand the business better.' This is the preferred move because once they see the number in text, they'll either accept silently or ghost — and we lose the chance to upgrade."+
-"\n  ANGLE B (TEXT-AVOIDER FALLBACK): if notes show they're a confirmed text-only person and won't pick up, drop the number directly: 'Approved at $X ready to go. Does that work for what you were looking to do? If you can hop on a quick call I can probably make it better.'"+
-"\nNext step we want: a call time, OR a yes/no on the soft offer."+
-"\n\nSTAGE 6 — PENDING DECISION (post-pitch, they said 'let me think')"+
-"\nWhat just happened: we pitched, they didn't say yes."+
-"\nWhat we need: a yes/no so we can send contracts or release the approval."+
-"\nMessage move: direct. 'Where are we on the $X — yes or no? I need to know whether to start contracts.' Never give them an easy out."+
-"\n\nSTAGE 7 — REJECTING OFFER (rebuttals)"+
-"\nWhen this applies: they said the offer is too small, payment is too high, terms aren't good enough."+
-"\nThe goal: keep the deal alive with rebuttals. Don't drop it. Don't get defensive."+
-"\nKEY REBUTTALS Sam uses:"+
-"\n  — 'What changes would make this work for you? Tell me what's realistic and I'll bring it to underwriting.'"+
-"\n  — On payment size: 'If the daily seems high, we can refinance after 6 weeks of payments to extend the terms. Lock it in today, ride 6 weeks, then we re-up at better terms. That's how most of my clients play it.'"+
-"\n  — 'The only way we can't approve you for another loan later is if the current one isn't paid back. Let's make this current offer work and stack from there.'"+
-"\n  — 'This is what underwriting put on the table this round. Tell me what's missing and I'll go back to them.'"+
-"\nNext step: them telling you what's realistic, OR locking in today with the refi promise."+
-"\n\nSTAGE 8 — AGREED → SEND CONTRACT (collect DL + voided check first)"+
-"\nWhat just happened: they agreed to move forward."+
-"\nBefore the contract goes out: driver's license + voided check (or alternative: bank letter / screenshot showing business name + account # + routing #)."+
-"\nWhat we need: photos of DL and voided check (or alternative)."+
-"\nMessage move: 'Send me a picture of your driver's license and a voided check so I can send the contract.'"+
-"\n\nSTAGE 9 — CONTRACT IN INBOX → PUSH TO SIGN"+
-"\nWhat just happened: contract is in their email."+
-"\nWhat we need: signature."+
-"\nMessage move: confirm sent + reduce friction. ('Signing locks in the rate but doesn't lock you into the deal — you can still change your mind until we wire.')"+
-"\n\nSTAGE 10 — BANK VERIFICATION (lender handles, not Sam)"+
-"\nWhat just happened: contract signed. Time for verification."+
-"\nTWO PATHS — never both. Whichever the lender provides:"+
-"\n  PATH A: lender sends a verification LINK. Sam forwards it. Merchant completes themselves."+
-"\n  PATH B: lender does a phone CALL with the merchant. Could be: merchant calls a number, OR merchant takes the lender's incoming call, OR they coordinate a time."+
-"\nIMPORTANT: Sam never does the verification himself. The lender handles it. The notes/status note will say which path applies for THIS deal — read them carefully."+
-"\nMessage move: tell them what's coming (link incoming OR call incoming/outgoing) and what's needed from them."+
-"\n\nSTAGE 11 — FUNDING CALL (final step)"+
-"\nWhat just happened: verification done, funder is ready to wire."+
-"\nWhat we need: a quick funding call between merchant and funder."+
-"\nMessage move: same pattern as bank verification — they call a number, or wait for a call, or pick a time. Always check the notes for which one."+
-"\n\nSTAGE 12 — FUNDED"+
-"\nMessage move: short, warm confirmation. Funded ✅. Pleasure working with you. Tell me when the wire hits."+
-"\n\nSTAGE 13 — POST-FUNDING REFI / RENEWAL (50%+ paid in)"+
-"\nWhen this applies: they're 1-2+ months in, paid down enough to renew."+
-"\nMessage move: re-engage warmly, ask how much they need now. Frame as: 'You've been solid on payments — got the green light to offer you a renewal at better terms and a higher limit. How much are you looking for?'"+
-"\n\nSTAGE 14 — GHOST / NO REPLY (chase the silence)"+
-"\nWhen this applies: we've reached out about an approval/file and they've gone dark."+
-"\nMessage move: short, slightly different angle each time. Don't pile up identical follow-ups."+
-"\nKey lines Sam uses:"+
-"\n  — 'You went quiet on me — did something change with the [$X] or did the timing just shift?'"+
-"\n  — 'Just a heads up you're still approved. If you want to move forward let me know. Otherwise I'll close this out and reallocate.'"+
-"\n  — 'Are we still doing this or did you go a different direction? Either way is fine — just need to know.'"+
-"\nDo NOT: send 5 'just checking in' messages. Vary the angle, give them an out (closing the file), or pivot to a different stage of the deal."+
-"\n\n══ HOW SAM WORKS THE 0% BUSINESS CREDIT (STACKING) FLOW ══"+
-"\nThis is a different product than MCA. If the lead is on stacking (status mentions credit lines, tri-merge, 0% APR, stacking, etc., OR the intent says 'CC stacking'), use this flow."+
-"\n\nSTACK STAGE 1 — QUALIFY ON CREDIT SCORE"+
-"\nWhat we need: their current credit score. 680+ is the target."+
-"\nBelow 680: don't kill it. Ask if they have a co-signer with stronger credit."+
-"\n\nSTACK STAGE 2 — GET THE TRI-MERGE REPORT (the main move of this whole flow)"+
-"\nWhat we need: tri-merge report PDF from creditheroscore.com, EMAILED to Sam."+
-"\nExact wording (or close to it): 'Go to creditheroscore.com, download your credit report PDF, and email it to me.'"+
-"\nKey detail: tell them to click 'Expand All' before saving the PDF — otherwise we only see a summary."+
-"\nEmail is the primary path. If email is somehow blocked, alternatives are: text the PDF, or upload via a secure link in the application. Don't open with the alternatives — open with email."+
-"\nNever ask them to share their creditheroscore login/password. Sam doesn't log in for them."+
-"\n\nSTACK STAGE 3 — REPORT IN HAND → SCHEDULE THE SPECIALIST CALL"+
-"\nWhat just happened: Sam got the report. He passes it to his stacking partners, who handle the deal from there."+
-"\nMessage move: 'You're pre-approved for $X. When's a good time to speak? My specialist wants to get on the phone with you and walk you through everything.'"+
-"\nSam's job here is just to hand off the call time. Partners take it from point A to wire."+
-"\n\nSTACK STAGE 4 — GHOST CHASE (if no report, no reply)"+
-"\nSame rules as MCA Stage 14 — vary the angle, give them an out, don't pile up identical 'still need that report' messages."+
-"\n\n══ GOLDEN RULES SAM LIVES BY ══"+
-"\n- A text moves the deal to the NEXT stage. It does not try to close the entire deal."+
-"\n- Selling happens on the phone, not in text. If we're at approved/pitch stage, the message must aim at booking a call — never give a hard close in text."+
-"\n- Never give them an easy out. 'Are you still interested?' invites a no. Push toward a concrete action instead."+
-"\n- Reference real artifacts where useful: the JotForm link, the actual offer amount, the DL/VC requirement, the bank verification link, the funder call."+
-"\n- Sound like Sam: confident, on the deal team, never desperate, never salesy."+
-(intent?"\n\n══ MY INTENT (what I want to land) ══\n\""+intent+"\"\nThis is the core message I want to deliver to "+first+" right now. All three drafts must serve this intent — not drift to other topics. Each draft delivers it from a different angle.":"")+
-"\n\n══ YOUR TASK ══"+
-(intent
-  ? "\nDraft THREE distinctly different SMS messages that all communicate this intent: \""+intent+"\". Each must take a clearly different strategic angle — not three variations of the same message."
-  : "\nDraft THREE distinctly different SMS messages to send "+first+" right now. Each must take a clearly different strategic angle — not three variations of the same message.")+
-"\n\nThe three angles, in this order:"+
-"\n1. DIRECT PUSH — Move the deal forward. Ask for the specific next step they need to take based on the deal state. Confident, assumes the close."+
-"\n2. SOFT CHECK-IN — Re-open conversation low-pressure. Best when they've gone quiet, are stalling, or need breathing room. Curious tone, not chasing."+
-"\n3. VALUE / URGENCY — Anchor on what's on the table or why now matters. Reference the actual offers if any, or the timing of their goals. Real urgency only — no fake scarcity."+
-"\n\nRULES"+
-"\n- Reference real details from above (offer amounts, status, what they wanted, what they said in notes). Do NOT be generic."+
-"\n- Use "+first+" by name."+
-"\n- Each message under 160 characters when possible."+
-"\n- Sound human and confident. No 'I hope this finds you well'. No 'just checking in!' (cliché)."+
-"\n- If the wait timer is ACTIVE, the deal is on hold — write messages they can send AFTER the wait expires (acknowledge the gap)."+
-"\n- Identify which product/flow this lead is on (MCA vs 0% Business Credit stacking) using the lead status, status note, intent, and notes. Pick the playbook that matches. If the intent explicitly says 'CC stacking', use the stacking playbook even if the status looks MCA-ish."+
-"\n- Identify what stage of the relevant playbook this lead is at. The drafts must aim at the NEXT step in that stage's flow — not skip ahead, not stay stuck."+
-"\n- If we're at the Approved stage of either flow, the goal of every draft is to BOOK A CALL. Do not try to close the deal in the text. The drafts should make the call feel valuable (better terms, more capital, understanding their business)."+
-"\n- Never use exclamation marks more than once across all 3 messages combined."+
-(intent?"\n- The intent \""+intent+"\" is non-negotiable — it must be the substance of every draft. The angle determines HOW to say it, not WHAT to say.":"")+
-"\n\nOUTPUT FORMAT — return ONLY this JSON, no markdown fences, no explanation:"+
-"\n{\"messages\":[{\"angle\":\"Direct push\",\"text\":\"...\"},{\"angle\":\"Soft check-in\",\"text\":\"...\"},{\"angle\":\"Value / urgency\",\"text\":\"...\"}]}";
-
-  // Call Gemini through Apps Script (key stays server-side, never exposed in HTML)
-  // The Apps Script's geminiSMS() handles model fallback (lite → flash → lite) on overload
-  const callGeminiServer=async()=>{
-    const s=currentSheet();
-    const r=await fetch(s.url||SHEET_URL,{
-      method:"POST",
-      headers:{"Content-Type":"text/plain"},
-      body:JSON.stringify({action:"geminiSMS",prompt:promptText})
-    });
-    return r.json();
-  };
-  const wait=(ms)=>new Promise(r=>setTimeout(r,ms));
-
-  // Robust JSON parser — handles markdown fences, preamble, trailing text
-  const parseAIJSON=(t)=>{
-    if(!t)return null;
-    let s=t.replace(/```json\s*|\s*```/g,"").trim();
-    const a=s.indexOf("{"),b=s.lastIndexOf("}");
-    if(a>=0&&b>a)s=s.slice(a,b+1);
-    try{return JSON.parse(s);}catch(e){return null;}
-  };
-
-  try{
-    let data=await callGeminiServer();
-    // Apps Script handled overload retries internally; if still erroring, surface it
-    if(data.error){toast("AI error: "+data.error);cards.innerHTML="";cards.style.display="none";btn.innerHTML="✨ Write message with AI";btn.disabled=false;return;}
-
-    const raw=(data.text||"").trim();
-    const parsed=parseAIJSON(raw);
-    const msgs=(parsed&&Array.isArray(parsed.messages))?parsed.messages.filter(m=>m&&m.text):[];
-
-    if(!msgs.length){toast("Couldn't generate — try again");cards.innerHTML="";cards.style.display="none";btn.innerHTML="✨ Write message with AI";btn.disabled=false;return;}
-
-    // Three distinct accent colors per angle
-    const accents=[
-      {bg:"linear-gradient(135deg,rgba(239,68,68,.12),rgba(239,68,68,.04))",border:"rgba(239,68,68,.35)",label:"#fca5a5",icon:"🎯"},
-      {bg:"linear-gradient(135deg,rgba(59,130,246,.12),rgba(59,130,246,.04))",border:"rgba(59,130,246,.35)",label:"#93c5fd",icon:"💬"},
-      {bg:"linear-gradient(135deg,rgba(201,162,39,.14),rgba(201,162,39,.04))",border:"rgba(201,162,39,.4)",label:"#fcd34d",icon:"⚡"}
-    ];
-
-    cards.innerHTML="";
-    msgs.slice(0,3).forEach((m,i)=>{
-      const a=accents[i]||accents[0];
-      const angle=m.angle||["Direct push","Soft check-in","Value / urgency"][i]||"Option "+(i+1);
-      const text=String(m.text||"").trim();
-      const card=document.createElement("div");
-      card.style.cssText="background:"+a.bg+";border:1px solid "+a.border+";border-radius:14px;padding:11px 12px";
-      card.innerHTML=
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
-          '<div style="font-size:11px;font-weight:800;color:'+a.label+';letter-spacing:.4px;text-transform:uppercase">'+a.icon+' '+angle+'</div>'+
-          '<div id="ai-cc-'+i+'" style="font-size:10px;color:rgba(255,255,255,.4);font-weight:600">'+text.length+' ch</div>'+
-        '</div>'+
-        '<textarea id="ai-sms-ta-'+i+'" rows="3" style="width:100%;background:rgba(0,0,0,.25);border:1px solid '+a.border+';border-radius:10px;color:#fff;padding:10px;font-size:13px;resize:none;box-sizing:border-box;font-family:inherit;line-height:1.5"></textarea>'+
-        '<button onclick="sendAISMS('+i+')" style="width:100%;margin-top:8px;padding:11px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#c9a227);border:none;color:#fff;font-size:13px;font-weight:800;touch-action:manipulation">Send →</button>';
-      cards.appendChild(card);
-      const ta=card.querySelector("#ai-sms-ta-"+i);
-      ta.value=text;
-      // auto-grow + live char count
-      const grow=()=>{ta.style.height="auto";ta.style.height=ta.scrollHeight+"px";const cc=card.querySelector("#ai-cc-"+i);if(cc)cc.textContent=ta.value.length+" ch";};
-      ta.addEventListener("input",grow);
-      requestAnimationFrame(grow);
-    });
-    cards.style.display="flex";
-  }catch(e){toast("Network error: "+e.message);cards.innerHTML="";cards.style.display="none";}
-  btn.innerHTML="✨ Regenerate 3 drafts";btn.disabled=false;
-}
 
 /* BOOT — instant start, network sync happens in parallel */
 (function(){
