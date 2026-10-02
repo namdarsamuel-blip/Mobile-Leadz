@@ -1776,15 +1776,9 @@ function renderCard(){
           +(remHtml||'')
         +'</div>';
       })()
-      +'<div style="padding:0 16px 12px" id="status-blocks-wrap"'+(isOnWait?' style="opacity:.4"':'')+'>'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
-          +'<span style="font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--sub)">Status</span>'
-          +'<div style="display:flex;gap:6px;align-items:center">'
-            +(statusDisplay?'<button onclick="moveAllStatusToNotes('+c.row+')" style="font-size:10px;font-weight:800;padding:4px 9px;border-radius:6px;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3);color:#a78bfa;touch-action:manipulation;white-space:nowrap" title="Move all status lines to notes">→ notes (all)</button>':'')
-            +'<button onclick="addStatusLine('+c.row+')" style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.32);color:var(--gold);touch-action:manipulation;white-space:nowrap">+ line</button>'
-          +'</div>'
-        +'</div>'
-        +'<div id="status-blocks-list" data-row="'+c.row+'"></div>'
+      +'<div style="padding:0 16px 12px;display:flex;align-items:flex-start;gap:8px">'
+        +'<span style="font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--sub);flex-shrink:0;padding-top:9px">Status</span>'
+        +'<textarea id="status-j-input" placeholder="Add a status note..." style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(45,37,80,.8);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-weight:600;outline:none;resize:none;overflow:hidden;line-height:1.4;font-family:inherit;'+(isOnWait?'opacity:.4':'')+'" onfocus="this.style.borderColor=&apos;var(--gold)&apos;" onblur="this.style.borderColor=&apos;rgba(45,37,80,.8)&apos;">'+(statusDisplay||'')+'</textarea>'
       +'</div>'
     +'</div>'
     +'<div class="cta-row" style="'+(isOnWait?'opacity:.25;pointer-events:none':'')+'">'
@@ -1825,8 +1819,26 @@ function renderCard(){
     +'</div>';
   setTimeout(()=>{
     const nt=$("notes-tap");if(nt&&!isOnWait)nt.onclick=()=>openEdit(idx);
-    // Render multi-line status blocks
-    renderStatusBlocks(contacts[idx].row);
+    // Status textarea: auto-resize + save-on-blur. Simple, stable, matches notes behavior.
+    const sj=$("status-j-input");
+    if(sj){
+      const resize=()=>{sj.style.height="auto";sj.style.height=sj.scrollHeight+"px";};
+      resize();sj.addEventListener("input",resize);
+      const orig=sj.value;
+      const boundRow=contacts[idx].row;
+      sj.addEventListener("focus",function(){window._swipeDisabled=true;});
+      sj.addEventListener("blur",()=>{
+        window._swipeDisabled=false;
+        const val=sj.value.trim();
+        if(val!==orig){
+          const ct=contacts.find(x=>x.row===boundRow);
+          if(ct){ct.status=val;saveC();}
+          const s=currentSheet();
+          fetch(s.url||SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain"},
+            body:JSON.stringify({action:"updateCell",sheet:s.tab,row:boundRow,field:"status",value:val})}).catch(function(){});
+        }
+      });
+    }
     // Render per-lead activity feed
     if(contacts[idx])renderLeadActivity(contacts[idx].row);
   },0);
