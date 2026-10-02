@@ -2436,148 +2436,6 @@ function syncStatusesFromContacts(){
 // flow continues seamlessly instead of jumping back to lead #1.
 function LAST_TOUCHED_KEY(){return"ffc_last_touched_"+currentSheet().cache;}
 
-// ── STATUS MULTI-LINE BLOCKS ─────────────────────────────────────────────────
-// Status field (col K) is stored as a single string with \n separators.
-// Each line becomes its own editable row on the card. Lines rejoin with \n on save.
-let _statusSaveTimer=null;
-
-function statusLinesFor_(row){
-  const c=contacts.find(x=>x.row===row);
-  if(!c||!c.status)return[];
-  return String(c.status).split("\n").map(function(s){return s;}).filter(function(s){return s.trim();});
-}
-
-function renderStatusBlocks(row){
-  const list=document.getElementById("status-blocks-list");
-  if(!list||parseInt(list.dataset.row)!==row)return;
-  const lines=statusLinesFor_(row);
-  if(!lines.length){
-    list.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,.3);font-style:italic;padding:8px 10px;background:rgba(255,255,255,.02);border:1px dashed rgba(45,37,80,.6);border-radius:8px;text-align:center">No status yet · tap + line</div>';
-    return;
-  }
-  list.innerHTML=lines.map(function(line,i){
-    return '<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:6px">'+
-      '<textarea rows="1" data-line-idx="'+i+'" data-row="'+row+'" oninput="onStatusLineInput(this)" onfocus="window._swipeDisabled=true" onblur="window._swipeDisabled=false;saveStatusLinesNow('+row+')" onkeydown="if(event.key===&apos;Enter&apos;&&!event.shiftKey){event.preventDefault();this.blur();}" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(45,37,80,.8);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-weight:600;outline:none;resize:none;overflow:hidden;line-height:1.4;font-family:inherit">'+escapeHTML(line)+'</textarea>'+
-      '<button onclick="moveStatusLineToNotes('+row+','+i+')" title="Move to notes" style="width:30px;height:30px;flex-shrink:0;padding:0;border-radius:8px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.28);color:#a78bfa;font-size:12px;font-weight:800;touch-action:manipulation;line-height:1">→</button>'+
-      '<button onclick="deleteStatusLine('+row+','+i+')" title="Delete line" style="width:30px;height:30px;flex-shrink:0;padding:0;border-radius:8px;background:rgba(240,68,68,.06);border:1px solid rgba(240,68,68,.22);color:rgba(248,113,113,.75);font-size:14px;font-weight:800;touch-action:manipulation;line-height:1">✕</button>'+
-    '</div>';
-  }).join("");
-  list.querySelectorAll("textarea").forEach(function(t){
-    t.style.height="auto";t.style.height=t.scrollHeight+"px";
-  });
-}
-
-function onStatusLineInput(el){
-  el.style.height="auto";el.style.height=el.scrollHeight+"px";
-  const row=parseInt(el.dataset.row);
-  if(_statusSaveTimer)clearTimeout(_statusSaveTimer);
-  _statusSaveTimer=setTimeout(function(){saveStatusLinesNow(row);},800);
-}
-
-function saveStatusLinesNow(row){
-  if(_statusSaveTimer){clearTimeout(_statusSaveTimer);_statusSaveTimer=null;}
-  const list=document.getElementById("status-blocks-list");
-  if(!list||parseInt(list.dataset.row)!==row)return;
-  const lines=Array.from(list.querySelectorAll("textarea[data-line-idx]"))
-    .map(function(t){return t.value.replace(/\r?\n/g," ").trim();})
-    .filter(function(l){return l.length>0;});
-  const joined=lines.join("\n");
-  const c=contacts.find(x=>x.row===row);
-  if(!c)return;
-  if((c.status||"")===joined)return;
-  const before=c.status||"";
-  c.status=joined;saveC();
-  logChange("status",c,"Status updated",{
-    kind:"fields",fields:{status:{before:before,after:joined}}
-  });
-  const s=currentSheet();
-  fetch(s.url||SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain"},
-    body:JSON.stringify({action:"updateCell",sheet:s.tab,row:row,field:"status",value:joined})
-  }).catch(function(){});
-}
-
-function addStatusLine(row){
-  const list=document.getElementById("status-blocks-list");
-  if(!list)return;
-  // Clear placeholder if visible
-  if(!list.querySelector("[data-line-idx]"))list.innerHTML="";
-  const nextIdx=list.querySelectorAll("[data-line-idx]").length;
-  const wrap=document.createElement("div");
-  wrap.style.cssText="display:flex;align-items:flex-start;gap:6px;margin-bottom:6px";
-  wrap.innerHTML='<textarea rows="1" data-line-idx="'+nextIdx+'" data-row="'+row+'" oninput="onStatusLineInput(this)" onfocus="window._swipeDisabled=true" onblur="window._swipeDisabled=false;saveStatusLinesNow('+row+')" onkeydown="if(event.key===&apos;Enter&apos;&&!event.shiftKey){event.preventDefault();this.blur();}" placeholder="New status line…" style="flex:1;background:rgba(255,255,255,.05);border:1.5px solid var(--gold);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-weight:600;outline:none;resize:none;overflow:hidden;line-height:1.4;font-family:inherit"></textarea>'+
-    '<button onclick="moveStatusLineToNotes('+row+','+nextIdx+')" style="width:30px;height:30px;flex-shrink:0;padding:0;border-radius:8px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.28);color:#a78bfa;font-size:12px;font-weight:800;touch-action:manipulation;line-height:1">→</button>'+
-    '<button onclick="deleteStatusLine('+row+','+nextIdx+')" style="width:30px;height:30px;flex-shrink:0;padding:0;border-radius:8px;background:rgba(240,68,68,.06);border:1px solid rgba(240,68,68,.22);color:rgba(248,113,113,.75);font-size:14px;font-weight:800;touch-action:manipulation;line-height:1">✕</button>';
-  list.appendChild(wrap);
-  const ta=wrap.querySelector("textarea");
-  if(ta)ta.focus();
-}
-
-function deleteStatusLine(row,lineIdx){
-  const list=document.getElementById("status-blocks-list");
-  if(!list||parseInt(list.dataset.row)!==row)return;
-  const rows=list.querySelectorAll("[data-line-idx]");
-  if(rows[lineIdx])rows[lineIdx].parentElement.remove();
-  saveStatusLinesNow(row);
-  setTimeout(function(){renderStatusBlocks(row);},50);
-}
-
-function moveStatusLineToNotes(row,lineIdx){
-  const list=document.getElementById("status-blocks-list");
-  if(!list)return;
-  const rows=list.querySelectorAll("textarea[data-line-idx]");
-  if(!rows[lineIdx])return;
-  const lineText=rows[lineIdx].value.trim();
-  if(!lineText){toast("Line is empty");return;}
-  const c=contacts.find(x=>x.row===row);
-  if(!c)return;
-  const before={notes:c.notes||"",status:c.status||""};
-  const stamp=new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"});
-  const noteAdd="["+stamp+"] "+lineText;
-  const newNotes=(c.notes||"").trim()?((c.notes.trim())+"\n\n"+noteAdd):noteAdd;
-  c.notes=newNotes;
-  const lines=Array.from(rows).map(function(t){return t.value.trim();});
-  lines.splice(lineIdx,1);
-  c.status=lines.filter(function(l){return l.length>0;}).join("\n");
-  saveC();
-  logChange("status",c,'Moved status → notes: "'+lineText.slice(0,60)+'"',{
-    kind:"fields",fields:{
-      status:{before:before.status,after:c.status},
-      notes:{before:before.notes,after:c.notes}
-    }
-  });
-  const s=currentSheet();
-  fetch(s.url||SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain"},
-    body:JSON.stringify({action:"updateFull",sheet:s.tab,row:row,notes:c.notes,status:c.status})
-  }).catch(function(){});
-  renderCard();
-  toast("→ Moved to notes");
-}
-
-function moveAllStatusToNotes(row){
-  const c=contacts.find(x=>x.row===row);
-  if(!c||!(c.status||"").trim())return;
-  const before={notes:c.notes||"",status:c.status||""};
-  const stamp=new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"});
-  const statusLines=String(c.status).split("\n").map(function(l){return l.trim();}).filter(Boolean);
-  const noteAdd=statusLines.map(function(l){return "["+stamp+"] "+l;}).join("\n");
-  const newNotes=(c.notes||"").trim()?((c.notes.trim())+"\n\n"+noteAdd):noteAdd;
-  c.notes=newNotes;
-  c.status="";
-  saveC();
-  logChange("status",c,"Moved all status → notes ("+statusLines.length+" line"+(statusLines.length===1?"":"s")+")",{
-    kind:"fields",fields:{
-      status:{before:before.status,after:""},
-      notes:{before:before.notes,after:c.notes}
-    }
-  });
-  const s=currentSheet();
-  fetch(s.url||SHEET_URL,{method:"POST",headers:{"Content-Type":"text/plain"},
-    body:JSON.stringify({action:"updateFull",sheet:s.tab,row:row,notes:c.notes,status:""})
-  }).catch(function(){});
-  renderCard();
-  toast("→ Moved "+statusLines.length+" line"+(statusLines.length===1?"":"s")+" to notes");
-}
-
 function markTouched(row){
   if(!row)return;
   try{localStorage.setItem(LAST_TOUCHED_KEY(),String(row));}catch{}
@@ -3507,150 +3365,153 @@ function openSMSPicker(ri){
 
   _smsTree={
     // ─────────────────────────────────────────────────────────────────────
-    // MCA — Working Capital. Warm, chill, assumes they expect my text
-    // because they applied. Short like a human text, not broker-speak.
+    // MCA — Working Capital. Real-company voice: how an account manager at
+    // a reputable lender would actually text someone who applied. Warm,
+    // professional, specific. Proper greeting, proper sign-off where it fits.
     // ─────────────────────────────────────────────────────────────────────
     mca:{label:"Working Capital (MCA)",icon:"💼",stages:{
       intro:{label:"Intro — Got the App",icon:"👋",templates:[
-        // Hero intros — short, chill, no brand-forward "I'll be handling your file"
-        {l:"Got your app",b:"Hey "+first+", Sam here from "+brand+". Got your app ✓ Taking a look now, I'll be in touch shortly."},
-        {l:"Got the app — anything to know?",b:"Hey "+first+" — Sam from "+brand+". Just got your app. Anything I should know before I send it over to underwriting?"},
-        {l:"Reviewing now",b:"Hey "+first+", it's Sam from "+brand+". Reviewing your app now. I'll shoot you back shortly."},
-        {l:"Got app + statements",b:"Hey "+first+" — Sam from "+brand+". App + bank statements both in ✓ Running it now."},
+        // Primary intros — professional, specific, warm
+        {l:"Got your app (standard)",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+" and am reviewing it now. I'll follow up shortly with next steps."},
+        {l:"Got app — anything to note?",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+" and am reviewing it now. If there's anything specific about the business you'd like me to pass along to underwriting — recent dips, upcoming contracts, what the funds will be used for — feel free to share here."},
+        {l:"Thank you — reviewing",b:"Hi "+first+", Sam here with "+brand+". Thank you for your application. I've got everything on my end and am reviewing it now. I'll be in touch shortly."},
+        {l:"Got app + statements",b:"Hi "+first+", this is Sam with "+brand+". I received your application and bank statements for "+bizNice+". Everything's in — I'll have it over to underwriting shortly and follow up with next steps."},
+        {l:"Short + professional",b:"Hi "+first+", Sam with "+brand+". Application received. Reviewing now and will be in touch shortly."},
 
-        // Two-text split
-        {l:"Split 1 — who I am",b:"Hey "+first+", this is Sam from "+brand+" — got your app in."},
-        {l:"Split 2 — anything to add?",b:"Before I pass it to underwriting, anything you want me to know? Upcoming contracts, slow month on the statements, what the funds are for — whatever helps."},
-
-        // Super casual
-        {l:"Shortest intro",b:"Hey "+first+" — Sam from "+brand+". Got the app, I'll be in touch."},
+        // Two-text split (professional version)
+        {l:"Split 1 — who I am",b:"Hi "+first+", this is Sam with "+brand+". I've received your application for "+bizNice+"."},
+        {l:"Split 2 — anything to add?",b:"Before I submit to underwriting, is there anything specific about the business you'd like me to include? Projected contracts, what the funds will be used for, any recent dips in the statements — context like that helps me get you the strongest terms possible."},
       ]},
 
       review:{label:"Review / Update",icon:"🔎",templates:[
-        {l:"In underwriting",b:first+" — update: file's in underwriting. I'll ping you as soon as I hear."},
-        {l:"Should know today",b:"Should have an answer back today "+first+". Will text you the second I know."},
-        {l:"Need latest statement",b:"Hey "+first+" — underwriting wants your most recent month of bank statements. Can you email it over when you get a sec?"},
-        {l:"Need one more thing",b:first+" — one more thing before they finalize: [specify]. Shoot it over when you can."},
+        {l:"In underwriting",b:"Quick update, "+first+" — your file is in underwriting now. I'll follow up as soon as I have a decision."},
+        {l:"Should hear today",b:"Hi "+first+", I should have an update from underwriting today. I'll reach back as soon as I have news."},
+        {l:"Need latest statement",b:"Hi "+first+", underwriting is requesting your most recent month of bank statements to finalize. Can you email those over when you have a moment? Takes a minute to pull from online banking."},
+        {l:"Need one more thing",b:"Hi "+first+", underwriting needs one more item before finalizing: [specify]. Could you send that over when you get a chance?"},
       ]},
 
-      approved:{label:"Approval → Call",icon:"✅",templates:[
-        // Short + chill = the hero
-        {l:"Got you approved",b:"Hey "+first+" — got you approved. When's a good time for a quick call?"},
-        {l:"Approval in — call me",b:"Approval's in "+first+" ✅ Give me a ring when you have 10 min."},
-        {l:"Call today?",b:first+" — what time today works for a quick call? Got your approval back."},
-        {l:"Approval + a few options",b:"Hey "+first+" — approval came in with a couple ways to structure it. Easier to walk you through on a call than text. When's good?"},
+      approved:{label:"Approval",icon:"✅",templates:[
+        // ─── NO-CALL VARIANTS (just share the news, let them drive) ───
+        {l:"Approved — simple",b:"Hi "+first+", good news — your application for "+bizNice+" has been approved. I'll send over the full terms shortly. — Sam, "+brand},
+        {l:"Approved — here are the terms",b:"Hi "+first+", approval came through for "+bizNice+".\n\nFunding Amount: "+amt+"\nTerm: [X] months\nPayment: $[X] [daily/weekly]\nPayback: $[X]\n\nLet me know how you'd like to proceed. — Sam, "+brand},
+        {l:"Approved — any questions?",b:"Hi "+first+", your approval for "+bizNice+" came through. I'll send the details over — let me know if you have any questions or if you'd like to move forward. — Sam"},
+        {l:"Approved + amount only",b:"Hi "+first+", approval came in at "+amt+" for "+bizNice+". I'll follow up with the full breakdown shortly. — Sam, "+brand},
+        {l:"Preapproved — how you want to proceed?",b:"Hi "+first+", I have everything on my end from your application — you're preapproved for "+bizNice+". How would you like to proceed from here? — Sam, "+brand},
 
-        // First contact (no intro was sent, approval doubles as the intro)
-        {l:"First contact + approval",b:"Hey "+first+" — this is Sam from "+brand+", I've been handling your file. Good news, approval's in. When's a good time to chat?"},
+        // ─── CALL-ORIENTED (when a conversation adds value) ───
+        {l:"Approved + offer call",b:"Hi "+first+", good news — your application for "+bizNice+" has been approved. Happy to walk through the terms over text or on a quick call, whichever you prefer. — Sam, "+brand},
+        {l:"Approval + a few options",b:"Hi "+first+", we have an approval ready for "+bizNice+". There are a few ways we can structure it — happy to send over the options here or go through them on a quick call, whichever works for you."},
+        {l:"Approval + early payoff mention",b:"Hi "+first+", your approval is in. One thing worth mentioning — "+brand+" offers early payoff discounts, so if you're able to pay down ahead of schedule you won't pay the full payback. Let me know how you'd like to move forward. — Sam"},
 
-        // Softer / nudge-y
-        {l:"Still holding",b:"Still holding your approval "+first+" — give me a shout when you have a sec."},
-        {l:"Quick 10 min",b:"Hey "+first+" — 10 min on the phone and I can walk you through the approval. What time works?"},
+        // ─── FIRST CONTACT (approval = first message because no intro went out) ───
+        {l:"First contact + approval",b:"Hi "+first+", this is Sam with "+brand+". I've been reviewing your application for "+bizNice+" — good news, we have an approval ready for you. I'll send the terms over shortly."},
 
-        // The "you emailed everything in" variant
-        {l:"You did it all over email — call",b:"Hey "+first+" — got everything you sent over email. You're basically approved already. Easiest to just hop on a quick call so I can hear what you actually want and get it locked in. When works?"},
+        // ─── HOLDING / FOLLOW-UP ───
+        {l:"Still holding approval",b:"Hi "+first+", just a heads up — your approval is still open on my end. Let me know when you'd like to move forward or if you have any questions. — Sam, "+brand},
+        {l:"Gentle follow-up",b:"Hi "+first+", just following up on your approval. No rush on your end — whenever you're ready to move forward or if you have any questions, I'm here. — Sam"},
       ]},
 
       pending:{label:"Pending Decision",icon:"⏳",templates:[
-        {l:"Where you at?",b:"Hey "+first+" — where you at on this? Just a yes or no on moving forward is all I need."},
-        {l:"Still holding",b:"Still holding the terms open for you "+first+". Just let me know."},
-        {l:"On the fence?",b:"If you're on the fence "+first+" let me know what's up — rather talk it through than have you sitting on it."},
+        {l:"Checking in on decision",b:"Hi "+first+", just checking in on where you're at with the approval. Whenever you have a moment to let me know, happy to go from there."},
+        {l:"Still holding terms",b:"Hi "+first+", still holding the terms open on my end. Let me know if you'd like to move forward, or if there's anything you'd like me to rework. — Sam"},
+        {l:"Happy to talk it through",b:"Hi "+first+", if you have any questions or hesitations, happy to talk through them. Easier than letting it sit."},
       ]},
 
       pushback:{label:"Pushback / Rework",icon:"↩️",templates:[
-        {l:"What would work?",b:"What would make this work for you "+first+"? Tell me what's realistic and I'll take it back."},
-        {l:"Refi after 6 weeks",b:"If the daily's heavy, play is to take it now, build 6 weeks of history, then refi for longer terms. Gets you funded today and better terms soon."},
-        {l:"Best this round",b:"That's what underwriting put up this round. Want me to lock it in or try to rework it?"},
+        {l:"What would work for you?",b:"Hi "+first+", what would make this deal work for you? If you tell me what's realistic I'll take it back to underwriting and see what we can adjust."},
+        {l:"Refi path",b:"Hi "+first+", if the daily payment feels heavy, a common path is to take the current approval, build 6 weeks of payment history, then refinance for longer terms and a lower daily. Gets funds in now and improves terms shortly after."},
+        {l:"Best this round",b:"Hi "+first+", that's what underwriting put together this round. Let me know if you'd like me to try to rework it, or if we should move forward as-is."},
       ]},
 
       dlvc:{label:"DL + Voided Check",icon:"🪪",templates:[
-        {l:"Send DL + VC",b:"Hey "+first+" — before contract goes out I need a pic of your license and a voided check. Shoot em over here."},
-        {l:"VC alternative",b:"No voided check? A screenshot of online banking showing business name + routing + account # works. Or a bank letter."},
-        {l:"Reminder",b:first+" — still need the DL and voided check. Contract goes out same minute they come in."},
+        {l:"Request DL + VC",b:"Hi "+first+", before I can release the contract I'll need a photo of your driver's license and a voided check. Please send both over when you have a moment."},
+        {l:"VC alternative",b:"Hi "+first+", if a voided check isn't handy, a screenshot of online banking showing the business name, routing number, and account number together works. A bank letter with the same information also works."},
+        {l:"Reminder — DL/VC",b:"Hi "+first+", just following up on the driver's license and voided check — the contract will go out as soon as I have both."},
       ]},
 
       contract:{label:"Contracts",icon:"✍️",templates:[
-        {l:"Contracts sent",b:"Just sent the contracts over to your email "+first+"."},
-        {l:"Signing ≠ locked in",b:"Quick note — signing locks the rate but doesn't commit you to funding yet. You can still back out until the wire. Just secures these terms."},
-        {l:"Early payoff discount",b:"Also — early payoff discounts here. Pay it off early, don't pay the full back. Just so you know."},
-        {l:"Contract chase",b:first+" — haven't seen the contracts come back. Can only hold terms so long before they get reallocated. We good for today?"},
+        {l:"Contracts sent",b:"Hi "+first+", I've just emailed the contracts over for your review."},
+        {l:"Signing clarification",b:"Hi "+first+", one quick note — signing locks in these specific terms but does not commit you to funding. You can still back out at any point before the wire is sent."},
+        {l:"Early payoff reminder",b:"Hi "+first+", also wanted to mention — "+brand+" offers early payoff discounts. If you're able to pay the balance off ahead of schedule, you won't pay the full payback amount."},
+        {l:"Contract follow-up",b:"Hi "+first+", just following up on the contracts — let me know when you have a chance to review, or if you have any questions. — Sam"},
       ]},
 
       bank_verif:{label:"Bank Verification",icon:"🏦",templates:[
-        {l:"Verification link",b:"Contracts signed ✓ Last step is a quick bank verification — sending you a secure link now, takes a minute."},
-        {l:"Funder call",b:"Last step "+first+" — funder's gonna hop on a quick call with you to wrap verification. What time today?"},
-        {l:"Link or call?",b:first+" — bank verification: want to knock it out with a link, or have my funder call you? Either works."},
-        {l:"Push",b:"Still need bank verification done "+first+" — link or call, your pick. Can't push to wire without it."},
+        {l:"Verification link",b:"Hi "+first+", contracts signed — thank you. Last step is a quick bank verification. I'll send over a secure link, takes about a minute to complete."},
+        {l:"Funder call",b:"Hi "+first+", last step before funding — our funder would like to hop on a brief call to wrap up verification. What time today works for you?"},
+        {l:"Link or call?",b:"Hi "+first+", for bank verification you can either complete it through a secure link or have our funder call you to walk through it. Which is easier for you?"},
+        {l:"Follow-up on verification",b:"Hi "+first+", still need to complete the bank verification before we can push to the wire. Please let me know whether you'd prefer the link or the call."},
       ]},
 
       funded:{label:"Funded / Renewal",icon:"🎉",templates:[
-        {l:"Funded ✅",b:"Funded ✅ Pleasure "+first+". Let me know when the wire hits."},
-        {l:"Funds on the way",b:"Funds are on the way "+first+" — ping me when you see em in the account."},
-        {l:"1-month check-in",b:"Hey "+first+" — how's it going with the capital? Everything running smooth?"},
-        {l:"Half paid — refi?",b:"Hey "+first+" — about halfway through payback. Want me to look at a refi and pull more capital? Usually better terms the second round."},
+        {l:"Funded",b:"Hi "+first+", funds have been sent. Pleasure working with you — please let me know when the wire hits your account. — Sam, "+brand},
+        {l:"Funds on the way",b:"Hi "+first+", funds are on the way. Glad we were able to get this done for "+bizNice+". Let me know when you see it come through."},
+        {l:"1-month check-in",b:"Hi "+first+", following up — how is everything going with the capital so far? Anything "+bizNice+" needs on my end?"},
+        {l:"50% paid — renewal",b:"Hi "+first+", you're about halfway through the payback and have been consistent on payments. Would you like me to look at a renewal to pull additional capital? Typically comes with stronger terms."},
       ]},
 
       checkin:{label:"Check-In / Quiet Lead",icon:"👋",templates:[
-        {l:"Nudge",b:"Hey "+first+" — still interested in moving forward or should I close your file?"},
-        {l:"No pressure",b:"No pressure "+first+" — keeping your file open on my end. Just text me whenever you want to pick it back up."},
-        {l:"Fresh look",b:"Hey "+first+" — new month. Want me to take a fresh look? Send me your latest bank statement and I'll pull new numbers."},
+        {l:"Checking in",b:"Hi "+first+", just checking in on your file. Would you still like to move forward, or should I go ahead and close it out?"},
+        {l:"No pressure",b:"Hi "+first+", no pressure on my end — happy to leave your file open. Just reply here whenever you'd like to pick it back up."},
+        {l:"New month, fresh look",b:"Hi "+first+", new month. If you'd like me to take a fresh look at your file, send over your most recent bank statement and I'll pull updated terms."},
       ]},
     }},
 
     // ─────────────────────────────────────────────────────────────────────
-    // Credit Cards (0% stacking). Lead already in — got their report in email,
+    // Credit Cards (0% stacking). Lead sent credit report via email,
     // reviewing with bank team, soft approval → schedule 631 number call.
     // ─────────────────────────────────────────────────────────────────────
     cc:{label:"0% Business Credit",icon:"💳",stages:{
       intro:{label:"Intro — Got Report",icon:"👋",templates:[
-        {l:"Got the report — how much?",b:"Hey "+first+" — Sam from "+brand+". Got your credit report ✓ How much you trying to get set up for the business?"},
-        {l:"Got the report — reviewing",b:"Hey "+first+", Sam from "+brand+". Credit report came in — sending to my bank team now. I'll be in touch as soon as I hear back."},
-        {l:"Got report + known amount",b:"Hey "+first+" — Sam from "+brand+". Got the report. Saw you're looking for "+amt+" — sending to the bank team now."},
+        // Primary — got the credit report
+        {l:"Got report — how much?",b:"Hi "+first+", this is Sam with "+brand+". I received your credit report and am reviewing it with our bank team. How much are you looking to secure for the business?"},
+        {l:"Got report — reviewing",b:"Hi "+first+", Sam with "+brand+". Credit report received — sending it over to our bank team for review. I'll follow up as soon as I have an update."},
+        {l:"Got report + known amount",b:"Hi "+first+", this is Sam with "+brand+". Received your credit report. I see you're looking for "+amt+" — I'll pass this to our bank team to review and follow up shortly."},
 
         // App came in before credit report
-        {l:"Got your app",b:"Hey "+first+" — Sam from "+brand+". Got your app ✓ Next step is pulling credit so my team can see what we can line up — soft pull, won't ding you. I'll send the link here."},
+        {l:"Got app — need credit next",b:"Hi "+first+", this is Sam with "+brand+". I received your application. Next step is pulling your credit so our team can see what we can line up — it's a soft pull and won't affect your score. I'll send the link over here."},
 
         // Split
-        {l:"Split 1",b:"Hey "+first+" — Sam from "+brand+", got your credit report."},
-        {l:"Split 2",b:"Passing it to my bank team now. How much are you looking to get lined up? Just helps me point them."},
+        {l:"Split 1",b:"Hi "+first+", this is Sam with "+brand+". I received your credit report."},
+        {l:"Split 2",b:"Passing it to our bank team for review now. How much are you looking to get lined up for the business? Helps me point them in the right direction."},
 
-        // Shortest
-        {l:"Shortest",b:"Hey "+first+" — Sam from "+brand+", got your report. I'll be in touch shortly."},
+        // Short
+        {l:"Short + professional",b:"Hi "+first+", Sam with "+brand+". Credit report received, reviewing with our bank team. I'll be in touch shortly."},
       ]},
 
       review:{label:"Review with Bank Team",icon:"🔎",templates:[
-        {l:"With the team now",b:"Report's with my team now "+first+" — usually same-day turnaround. Will ping you."},
-        {l:"Reviewing today",b:first+" — reviewing today, I'll have something for you shortly."},
-        {l:"Need one more thing",b:first+" — team wants one more thing before finalizing: [specify]. Shoot it over when you can."},
+        {l:"With bank team",b:"Hi "+first+", your report is with our bank team now — they typically turn these around same-day. I'll reach back as soon as I hear."},
+        {l:"Reviewing today",b:"Hi "+first+", reviewing with the team today. I'll have something for you shortly."},
+        {l:"Need one more thing",b:"Hi "+first+", the team needs one more item before finalizing: [specify]. Could you send that over when you get a chance?"},
       ]},
 
       soft_approval:{label:"Soft Approval → Schedule",icon:"✅",templates:[
-        // Pick a time (3 windows)
-        {l:"Pick a time",b:"Good news "+first+" — soft approval's in. My bank team wants a quick call to finalize. They'll be calling from a 631 number. Does today 3pm, tomorrow 11am, or tomorrow 2pm work best?"},
+        // Primary — 3 specific windows
+        {l:"Pick a time (3 options)",b:"Hi "+first+", good news — we received a soft approval on your file. Our bank team would like to schedule a brief call to finalize. They'll be calling from a 631 area code. Does today at 3 PM, tomorrow at 11 AM, or tomorrow at 2 PM work best? — Sam, "+brand},
         // Open window
-        {l:"Open window",b:"Good news "+first+" — soft approval in. Bank team needs a quick call to finalize, they call from a 631 number. What time works today or tomorrow?"},
+        {l:"Open window",b:"Hi "+first+", good news — soft approval is in. Our bank team needs to hop on a brief call to finalize. They'll be calling from a 631 area code. What time works for you today or tomorrow?"},
 
-        // Shorter variants
-        {l:"Short + chill",b:"Soft approval came through "+first+" ✅ Bank team ready to hop on a quick call — they'll call from a 631 number. What time today or tomorrow?"},
-        {l:"Late — do tomorrow",b:"Soft approval's in "+first+". Getting late today so let's do tomorrow — bank team calls from a 631 #. 11am, 12, or 2pm?"},
-        {l:"ASAP?",b:"Approval came in "+first+" — want to do it right now? Bank team can call you from a 631 number."},
+        // Variants
+        {l:"Short + professional",b:"Hi "+first+", soft approval came through. Our bank team would like to schedule a brief call to finalize — they'll be calling from a 631 area code. What time today or tomorrow works best? — Sam"},
+        {l:"Late day — tomorrow",b:"Hi "+first+", soft approval is in. Given the time, let's set the call for tomorrow — our bank team will be calling from a 631 area code. Does 11 AM, 12 PM, or 2 PM work for you?"},
+        {l:"ASAP",b:"Hi "+first+", your approval just came through. Our bank team is available now if you'd like to finalize right away — they'll be calling from a 631 area code. Available?"},
       ]},
 
       call_scheduled:{label:"Call Confirmed / Reminder",icon:"📞",templates:[
-        {l:"Confirmed",b:"Confirmed "+first+" — bank team calling you [TIME] from a 631 #. Pick up when you see it, that's them."},
-        {l:"Call in 15",b:"Heads up "+first+" — bank team calling in ~15 min from a 631 #."},
-        {l:"Missed — reschedule",b:first+" — bank team tried you, no answer. When's better? Give me another window and I'll have them try again."},
+        {l:"Confirm time",b:"Hi "+first+", confirmed — our bank team will call you at [TIME] from a 631 area code. Please answer when you see it come through, that will be them."},
+        {l:"15-min heads up",b:"Hi "+first+", quick heads up — our bank team will be calling you in about 15 minutes from a 631 area code."},
+        {l:"Missed — reschedule",b:"Hi "+first+", our bank team tried to reach you but didn't get through. When would be a better time? I'll have them try again."},
       ]},
 
       followup:{label:"Follow Up / Quiet",icon:"🔄",templates:[
-        {l:"Did you pull the report?",b:"Hey "+first+" — did you get a chance to pull that credit report?"},
-        {l:"Still moving?",b:"Hey "+first+" — still want to move forward with this? Just want to know whether to leave your file open."},
-        {l:"Pick up whenever",b:first+" — 0% window still open on my end. Reply here whenever you want to pick it back up."},
+        {l:"Checking on report",b:"Hi "+first+", following up — were you able to pull your credit report?"},
+        {l:"Still moving forward?",b:"Hi "+first+", checking in to see if you'd still like to move forward. Just want to know whether to keep your file open on our end."},
+        {l:"Pick up whenever",b:"Hi "+first+", the 0% window is still open on our end. Reply here whenever you'd like to pick this back up and I'll put you back into the queue."},
       ]},
 
       approved:{label:"Approved / Funded",icon:"🎉",templates:[
-        {l:"Approved ✅",b:"Approved ✅ Cards in the works "+first+". I'll let you know when the lines are ready to use."},
-        {l:"All set",b:first+" — everything's finalized ✓ Welcome aboard. Any questions after this just text me here."},
+        {l:"Approved",b:"Hi "+first+", you're approved. Cards are in the works — I'll reach back once the lines are ready to use. — Sam, "+brand},
+        {l:"All set",b:"Hi "+first+", everything's finalized. Welcome aboard — if you have any questions down the line, just text me here."},
       ]},
     }},
   };
