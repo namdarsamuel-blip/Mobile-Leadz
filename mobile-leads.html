@@ -3377,8 +3377,18 @@ function openSMSPicker(ri){
     mca:{label:"Working Capital (MCA)",icon:"💼",stages:{
 
       intro:{label:"Intro: Got the App",icon:"👋",templates:[
-        {l:"Got your app",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+" and am reviewing it. Nothing needed from you right now. I'll be back in touch once underwriting weighs in."},
-        {l:"Got app, anything to add?",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+". Before I submit it to underwriting, is there anything specific about the business you'd like me to include? Projected contracts, what the funds are for, any recent dips in the statements. Context like that helps me get you the strongest terms."},
+        {l:"Got your app",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+" and am going over it. Nothing needed from you right now, I'll be in touch as soon as I hear back from underwriting."},
+        {l:"Got app, anything to add?",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+". Before I send it to underwriting, is there anything specific about the business you'd like me to include? Projected contracts, what the funds are for, any recent dips in the statements. Context like that helps me get you the strongest terms."},
+      ]},
+
+      // ─── MCA → CREDIT PIVOT ───────────────────────────────────────────
+      // Lead applied for MCA but you want to steer them to a 0% business
+      // credit line instead. Two scenarios covered:
+      //   A) Their app mentioned good credit — just reference it and offer
+      //   B) Statements are weak — ask about score / co-signer as a path
+      pivot_credit:{label:"Pivot to Credit Line",icon:"🔁",templates:[
+        {l:"They mentioned good score",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+". You mentioned your credit is in good shape, so I wanted to flag something. In addition to the revenue program, we also have a 0% business credit line program that would likely be a better deal for you: no daily payments, 0% intro APR, and you'd have access to the capital on your own schedule. If your score is 680+, we can likely get you approved. Want me to send over the credit line application?"},
+        {l:"Statements won't fit, ask about score/co-signer",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+". The revenue-based program isn't the strongest fit for your file right now, but there's a 0% business credit line program that could work well. What's your credit score currently? If it's 680+ we can likely get you approved. If not, a co-signer with 680+ credit works as a path too. Let me know and I'll send over the credit line application."},
       ]},
 
       approved:{label:"Approval",icon:"✅",templates:[
@@ -3417,11 +3427,8 @@ function openSMSPicker(ri){
     cc:{label:"0% Business Credit",icon:"💳",stages:{
 
       intro:{label:"Intro",icon:"👋",templates:[
-        // Credit report in — professional intro, flags the call-later step without asking for time yet
-        {l:"Got your credit report",b:"Hi "+first+", this is Sam with "+brand+". I received your credit report and am reviewing it with our bank team. I'll be the representative on your file. If approved, our bank team will set up a brief call to go over the program terms with you. I'll follow up as soon as I have a decision."},
-
-        // Pivot: lead applied for MCA but doesn't qualify — route them to the credit program
-        {l:"Pivot: MCA doesn't fit, try credit",b:"Hi "+first+", this is Sam with "+brand+". I received your application. Based on your file, the revenue-based program isn't the strongest fit right now, but we have a 0% credit program that could work well if your score is 680+. What's your current credit score? If you have a co-signer with stronger credit, that works as a path too. If it's a go, next step would be pulling your credit (soft pull, won't affect your score) and I'll send the link over here."},
+        // Credit report in — natural phrasing, flags the call-later step without asking for time yet
+        {l:"Got your credit report",b:"Hi "+first+", this is Sam with "+brand+". I received your credit report and am going over it with our bank team. I'll be the rep on your file from here. If approved, our bank team will set up a brief call to go over the program terms with you. I'll be in touch as soon as I hear back."},
 
         // Simple "app in, credit next" (when there's no pivot context, just a straight CC applicant)
         {l:"Got app, need credit next",b:"Hi "+first+", this is Sam with "+brand+". I received your application. Next step is pulling your credit so our team can see what we can line up. It's a soft pull, won't affect your score. I'll send the link over here."},
