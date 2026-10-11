@@ -141,6 +141,9 @@ button,input,textarea{font-family:inherit;border:none;outline:none;cursor:pointe
 .section-label{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sub);display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .note-para{font-size:13px;color:rgba(176,168,208,.9);line-height:1.55;margin-bottom:8px;white-space:pre-wrap;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.04);border-left:2px solid rgba(124,58,237,.4)}
 .note-para:last-child{margin-bottom:0}
+.lex-notes-section{padding:14px 16px;border-bottom:1px solid rgba(45,37,80,.6);background:linear-gradient(180deg,rgba(239,68,68,.06),rgba(239,68,68,.02))}
+.lex-note-para{font-size:13px;color:rgba(254,202,202,.95);line-height:1.55;margin-bottom:8px;white-space:pre-wrap;padding:10px 12px;border-radius:10px;background:rgba(239,68,68,.09);border-left:2px solid rgba(248,113,113,.6)}
+.lex-note-para:last-child{margin-bottom:0}
 .notes-empty{font-size:13px;color:var(--sub);font-style:italic;display:flex;align-items:center;gap:8px}
 .add-note-hint{font-size:11px;font-weight:700;color:var(--gold);background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.2);padding:3px 10px;border-radius:20px}
 .info-grid-section{}
@@ -1629,6 +1632,10 @@ function renderCard(){
   const nonWaitTags=tagList.filter(t=>t.toLowerCase()!=="wait");
   const notesParas=c.notes?c.notes.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean):[];
   const notesHtml=notesParas.length?notesParas.map(p=>`<div class="note-para">${p}</div>`).join(""):`<div class="notes-empty"><span>No notes yet</span><span class="add-note-hint">+ Add note</span></div>`;
+  // Lexington notes — read-only, auto-synced from the Lexington source sheet (column I on Lendiago).
+  // Shown only when there's content, so leads without any Lexington involvement don't carry an empty block.
+  const lexNotesParas=c.lexingtonNotes?c.lexingtonNotes.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean):[];
+  const lexNotesHtml=lexNotesParas.length?lexNotesParas.map(p=>`<div class="lex-note-para">${p}</div>`).join(""):"";
   function fi(label,val,hi=false,full=false,field=""){
     const style=full?"grid-column:1/-1":"";
     const tap=field?('onclick="inlineEditField('+idx+',\''+field+'\',\''+label+'\',this)"'):"";
@@ -1807,6 +1814,14 @@ function renderCard(){
       +'<div class="section-label"><span>Notes</span><span style="color:var(--gold);font-size:10px;font-weight:700;text-transform:none;letter-spacing:0">✎ tap to edit</span></div>'
       +notesHtml
     +'</div>'
+    // Lexington Notes — read-only, auto-synced from the Lexington source sheet.
+    // Only renders when the lead actually has Lexington notes on file.
+    +(lexNotesHtml
+      ? '<div class="lex-notes-section">'
+          +'<div class="section-label"><span style="color:rgba(252,165,165,.95)">🏦 Lexington Notes</span><span style="color:rgba(252,165,165,.6);font-size:10px;font-weight:700;text-transform:none;letter-spacing:0">read-only · auto-synced</span></div>'
+          +lexNotesHtml
+        +'</div>'
+      : '')
     +renderOfferCards(c.approvals)
     +'<div style="border-top:1px solid rgba(45,37,80,.6);border-bottom:1px solid rgba(45,37,80,.6);background:rgba(0,0,0,.15);'+(isOnWait?'opacity:.4':'')+'">'
       +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr">'
