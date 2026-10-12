@@ -3348,7 +3348,27 @@ function smsNav(level,key){
   const phone=(c.phone||"").replace(/\D/g,"");
 
   if(level==="product"){
+    // Build the "💡 Suggested" card based on current lead status + credit.
+    // If there's a smart suggestion, show it big at the top so Sam can jump
+    // straight to the right stage without drilling through product → stage.
+    var sug=window._smsSuggestion;
+    var sugHtml="";
+    if(sug && TREE[sug.product] && TREE[sug.product].stages[sug.stage]){
+      var sugStage=TREE[sug.product].stages[sug.stage];
+      sugHtml=
+        '<button onclick="smsNav(\'templates\',\''+sug.product+':'+sug.stage+'\')" style="width:100%;background:linear-gradient(135deg,rgba(201,162,39,.18),rgba(124,58,237,.14));border:1.5px solid rgba(201,162,39,.5);border-radius:14px;padding:14px 16px;margin-bottom:12px;color:#fff;font-size:14px;font-weight:800;touch-action:manipulation;text-align:left;display:flex;flex-direction:column;gap:4px;box-shadow:0 2px 12px rgba(201,162,39,.12)">'+
+          '<div style="display:flex;align-items:center;gap:10px;width:100%">'+
+            '<span style="font-size:18px">💡</span>'+
+            '<span style="font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#c9a227">Suggested</span>'+
+            '<span style="flex:1"></span>'+
+            '<span style="color:rgba(255,255,255,.3);font-size:20px">›</span>'+
+          '</div>'+
+          '<div style="font-size:15px;font-weight:900;color:#fff;margin-top:2px">'+sugStage.icon+' '+sug.label+'</div>'+
+          '<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.6);line-height:1.3">'+sug.reason+'</div>'+
+        '</button>';
+    }
     list.innerHTML=
+      sugHtml+
       '<button onclick="window.open(\'sms:'+phone+'\',\'_self\');closeSMSPicker();" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;margin-bottom:10px;color:rgba(255,255,255,.8);font-size:14px;font-weight:800;touch-action:manipulation;text-align:left;display:flex;align-items:center;gap:10px">📱 <span>Open text — no template</span></button>'+
       Object.entries(TREE).map(function(e){var pk=e[0],prod=e[1];
         return'<button onclick="smsNav(\'stage\',\''+pk+'\')" style="width:100%;background:rgba(255,255,255,.05);border:1.5px solid rgba(45,37,80,.8);border-radius:14px;padding:16px;margin-bottom:8px;color:#fff;font-size:15px;font-weight:800;touch-action:manipulation;text-align:left;display:flex;align-items:center;gap:12px">'+prod.icon+'<span style="flex:1">'+prod.label+'</span><span style="color:rgba(255,255,255,.25);font-size:20px">›</span></button>';
@@ -3438,6 +3458,73 @@ function openSMSPicker(ri){
     return lbl;
   })();
 
+  // ───────────────────────────────────────────────────────────────────────
+  // SMART SUGGESTION ENGINE
+  // Reads the lead's current Lead Status + credit score and returns the ONE
+  // stage you most likely want to text about right now. Surfaced as a
+  // featured "💡 Suggested" card at the top of the SMS picker.
+  //
+  // Logic (first match wins):
+  //  - MCA path + score ≥ 650          → mca.pivot_credit  (always try the
+  //                                       0% intro CC line first — Sam's rule)
+  //  - 03. MCA → CC Pivot              → mca.pivot_credit  (lead already in
+  //                                       pivot phase)
+  //  - 02. MCA Approved + score < 650  → mca.approved      (send terms)
+  //  - 00. New / fresh                 → mca.intro         (opener)
+  //  - 04. Sent to Lexington           → cc.checkin        (nurture)
+  //  - 100/110/120 declined/garbage    → null              (don't text)
+  // ───────────────────────────────────────────────────────────────────────
+  function smartSMSSuggestion_(ctx){
+    var st=(String(ctx.leadStatus||"")+"").toLowerCase();
+    var creditStr=cleanCredit(ctx.credit);
+    // creditStr may be "650–669 (Fair)" or just "720". Pull the first number.
+    var creditNum=0;
+    if(creditStr){var m=String(creditStr).match(/\d{3}/);if(m)creditNum=parseInt(m[0],10);}
+    // Dead-end statuses: don't text at all
+    if(/decline|garbage|dead/i.test(st)) return null;
+    // Any MCA stage + 650+ score → ALWAYS the pivot (Sam's hard rule)
+    var isMcaStage=(st.indexOf("mca")!==-1 && st.indexOf("decline")===-1) ||
+                   st.indexOf("00. new")!==-1 || st.indexOf("new")===0;
+    if(isMcaStage && creditNum>=650){
+      return {product:"mca",stage:"pivot_credit",
+              label:"Pivot to 0% credit line",
+              reason:"Score "+creditNum+" qualifies — convert from MCA"};
+    }
+    // Lead already in pivot phase → surface the pivot templates
+    if(st.indexOf("pivot")!==-1 || st.indexOf("03.")!==-1){
+      return {product:"mca",stage:"pivot_credit",
+              label:"Pivot to 0% credit line",
+              reason:"Lead is in pivot phase"};
+    }
+    // MCA approved, lower score → terms
+    if((st.indexOf("02.")!==-1 || st.indexOf("approved")!==-1) && st.indexOf("lex")===-1){
+      return {product:"mca",stage:"approved",
+              label:"Send approval terms",
+              reason:"MCA approved — send terms"};
+    }
+    // Fresh lead → intro
+    if(st.indexOf("00. new")!==-1 || st===""){
+      return {product:"mca",stage:"intro",
+              label:"Intro: Got the app",
+              reason:"Fresh lead — opener"};
+    }
+    // MCA sent, waiting → follow-up
+    if(st.indexOf("01.")!==-1 || st.indexOf("mca sent")!==-1){
+      return {product:"mca",stage:"checkin",
+              label:"Follow-up",
+              reason:"Waiting on bank — check in"};
+    }
+    // Sent to Lexington → nurture on the CC side
+    if(st.indexOf("lexington")!==-1 || st.indexOf("04.")!==-1){
+      return {product:"cc",stage:"checkin",
+              label:"Follow-up on Lexington",
+              reason:"In Lexington stage — check in"};
+    }
+    return null;
+  }
+  // Expose for smsNav so the suggestion renders at the top of the picker
+  window._smsSuggestion = smartSMSSuggestion_(c);
+
   _smsTree={
     // ─────────────────────────────────────────────────────────────────────
     // Lean template library. Rules I follow when writing these:
@@ -3462,8 +3549,14 @@ function openSMSPicker(ri){
       //   A) Their app mentioned good credit — just reference it and offer
       //   B) Statements are weak — ask about score / co-signer as a path
       pivot_credit:{label:"Pivot to Credit Line",icon:"🔁",templates:[
+        // THE ONE — any MCA applicant with 650+ should hear this. Lead with
+        // the value prop (0%, no daily payments, their own schedule), not with
+        // the sales pitch. The suggestion engine (see smartSMSSuggestion) will
+        // surface this template at the top of the picker whenever credit≥650.
+        {l:"650+ score — convert to 0% intro credit line",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+" and want to flag something before we go down the revenue-based path. With your credit in the 650+ range, you'd be much better off on our 0% introductory business credit line program instead. The upside: 0% intro APR, no daily payments pulling out of your account, and you'd have access to the capital on your own schedule. Approval is based on your credit (tri-merge) rather than monthly revenue, so the numbers come out stronger for you. Want me to send over the credit line application?"},
         {l:"They mentioned good score",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+". You mentioned your credit is in good shape, so I wanted to flag something. In addition to the revenue program, we also have a 0% business credit line program that would likely be a better deal for you: no daily payments, 0% intro APR, and you'd have access to the capital on your own schedule. If your score is 680+, we can likely get you approved. Want me to send over the credit line application?"},
         {l:"Statements won't fit, ask about score/co-signer",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+". The revenue-based program isn't the strongest fit for your file right now, but there's a 0% business credit line program that could work well. What's your credit score currently? If it's 680+ we can likely get you approved. If not, a co-signer with 680+ credit works as a path too. Let me know and I'll send over the credit line application."},
+        {l:"MCA approved but score is better fit for CC",b:"Hi "+first+", this is Sam with "+brand+". Good news on the MCA approval, but before you decide — looking at your credit score, I think the 0% introductory credit line would actually be a much better deal for you. No daily payments, 0% intro APR, and the total cost ends up a fraction of the MCA. Want me to pull the credit side so you can see both offers before choosing?"},
       ]},
 
       approved:{label:"Approval",icon:"✅",templates:[
@@ -3487,6 +3580,21 @@ function openSMSPicker(ri){
         {l:"Contracts sent (check email)",b:"Hi "+first+", the contracts were sent to your email. Please review and sign when you have a moment. Text me once it's completed so I can confirm on my end."},
         {l:"Verification link sent",b:"Hi "+first+", just emailed over the bank verification link. Takes about a minute. Reply here when it's done and we'll move to funding."},
         {l:"Funded",b:"Hi "+first+", funds have been sent. Pleasure working with you. Let me know when the wire hits your account."},
+      ]},
+
+      // ─── FILE / DOC ISSUE — resend request ────────────────────────────
+      // Lead completed the application but something they sent won't work for
+      // underwriting (wrong format, incomplete, outdated). Every template:
+      // opens with who you are, thanks them for completing the app, says
+      // specifically what's wrong, and asks for the fix emailed to Sam.
+      needs_fix:{label:"Needs Fix / Resend",icon:"⚠️",templates:[
+        {l:"Bank stmts as photo (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application for "+bizNice+". The bank statements you sent came through as photos / screenshots which underwriting can't process. Could you log into your bank, download the last 3 months as PDFs, and email them to sam@lendiago.com? Takes about a minute per statement."},
+        // Wrong doc type sent — credit report instead of bank stmts
+        {l:"Sent credit report (need bank stmts)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for sending that over. For the revenue-based program, underwriting actually needs your last 3 months of business bank statements (not the credit report). Could you log into your bank, download them as PDFs, and email them to sam@lendiago.com?"},
+        {l:"Need more months of statements",b:"Hi "+first+", this is Sam with "+brand+". Thanks for sending over what you have. Underwriting needs the last 3 full months of bank statements to issue an offer. Could you pull the remaining ones as PDFs from online banking and email them to sam@lendiago.com?"},
+        {l:"Statement missing most recent month",b:"Hi "+first+", this is Sam with "+brand+". Thanks for the statements. Underwriting flagged that your most recent month isn't in there. Could you grab that one as a PDF from online banking and email it to sam@lendiago.com?"},
+        {l:"Need DL + voided check",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application. To finalize I'll need a clear photo of your driver's license and a voided check. You can text them to this number or email to sam@lendiago.com."},
+        {l:"Generic fix needed",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application for "+bizNice+". There's one issue with what you submitted that we need to fix before underwriting can move forward: [specify]. Please email the corrected version to sam@lendiago.com."},
       ]},
 
       checkin:{label:"Follow-Up",icon:"👋",templates:[
@@ -3519,6 +3627,25 @@ function openSMSPicker(ri){
         {l:"Confirm time",b:"Hi "+first+", confirmed. Our bank team will call you at [TIME] from a 631 area code. Please answer when you see it come through."},
         {l:"15-min heads up",b:"Hi "+first+", quick heads up. Our bank team will be calling you in about 15 minutes from a 631 area code."},
         {l:"Missed, reschedule",b:"Hi "+first+", our bank team tried to reach you but didn't get through. When would be a better time? I'll have them try again."},
+      ]},
+
+      // ─── FILE / DOC ISSUE — resend request ────────────────────────────
+      // Lead completed the application but what they sent won't fly for
+      // underwriting (HTML tri-merge, screenshot of score, missing bureau,
+      // outdated pull). Every template: opens with who you are, thanks them
+      // for completing the app, names the exact issue, and asks for the fix
+      // emailed to Sam.
+      needs_fix:{label:"Needs Fix / Resend",icon:"⚠️",templates:[
+        // The exact scenario Sam mentioned — tri-merge came as HTML
+        {l:"Tri-merge as HTML (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application for "+bizNice+". The tri-merge credit report you sent came through as an HTML file which our underwriting can't open. Could you pull it again and save it as a PDF, then email it to sam@lendiago.com?"},
+        // Wrong doc type sent — bank stmts instead of credit report
+        {l:"Sent bank stmts (need credit report)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for sending those over. For the 0% business credit line program, underwriting actually needs a tri-merge credit report (not bank statements). Could you pull a tri-merge from all 3 bureaus as a PDF and email it to sam@lendiago.com?"},
+        {l:"Tri-merge is summary (need full)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for sending the credit report. What came through is the summary page, but underwriting needs the full tri-merge report (all 3 bureaus, all accounts, full history). Could you re-pull the complete report as a PDF and email it to sam@lendiago.com?"},
+        {l:"Only 1 bureau (need all 3)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for the credit report. It only shows one bureau though, and underwriting needs all three (Experian, TransUnion, Equifax) on a single tri-merge report. Could you re-pull as a tri-merge PDF and email it to sam@lendiago.com?"},
+        {l:"Report too old (need current)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for the credit report. The pull date on this one is a few months out so underwriting needs a fresh one. Could you re-pull and send as a PDF to sam@lendiago.com?"},
+        {l:"Screenshot of score (need full report)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application. The score screenshot works for ballpark but underwriting needs the full tri-merge credit report as a PDF to issue an approval. Could you pull one and email it to sam@lendiago.com?"},
+        {l:"Need DL / voided check",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application. To move forward I'll need a clear photo of your driver's license and a voided check. Text them to this number or email to sam@lendiago.com."},
+        {l:"Generic fix needed",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application for "+bizNice+". There's one issue with what you submitted that we need to fix before underwriting can move forward: [specify]. Please email the corrected version to sam@lendiago.com."},
       ]},
 
       checkin:{label:"Follow-Up",icon:"🔄",templates:[
