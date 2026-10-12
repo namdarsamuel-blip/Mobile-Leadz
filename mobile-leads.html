@@ -654,8 +654,10 @@ function closeStatusPicker(){$("status-ov").classList.remove("open");_spIdx=null
 // Keep this list short — tags people actually use come from leads already
 // in play, not from presets. Add more here only when the mobile picker
 // really needs a specific tag that isn't on any lead yet.
+// "📎 Needs Docs" is now a Lead Status (column F), not a tag. See statusStyle
+// and smartSMSSuggestion_ for how 05. Needs Docs is handled.
 const PRESET_TAGS = [
-  "📎 Needs Docs"   // missing docs or wrong file submitted — resend required
+  "🔥 Moving Forward"    // active deal — either working on approval or approved + client moving to sign/fund
 ];
 let _tpIdx=null;            // index of lead being edited
 let ALL_TAGS=[];            // every known tag from col F validation + actually-used cells
@@ -2185,7 +2187,8 @@ function statusStyle(ls){
   //   01. MCA Sent                peach   #fbd4b1   orange     #fb923c
   //   02. MCA Approved            green   #cfeab8   green      #34d399
   //   03. MCA → CC Pivot          blue    #b7d8f1   blue       #60a5fa
-  //   04. Sent to Lexington       lavender#e2d4f0   violet     #c4b5fd
+  //   04. Needs Docs              blue    #b7d8f1   blue       #60a5fa (same as 03)
+  //   05. Sent to Lexington       lavender#e2d4f0   violet     #c4b5fd
   //   100/110/120 Declined/Garbage red     #f3bebe   red        #f87171
   //
   // Match by number prefix first (most reliable), then by keyword fallback so a
@@ -2205,10 +2208,15 @@ function statusStyle(ls){
   if(l.indexOf("02.")===0||l.indexOf("approv")!==-1)
     return{bg:"rgba(52,211,153,.13)",border:"rgba(52,211,153,.45)",color:"#34d399"};     // green
 
+  // 03 Pivot and 04 Needs Docs share the same BLUE — same task, same hierarchy
+  // (both are "client applied, we need their credit report / correct docs").
   if(l.indexOf("03.")===0||l.indexOf("pivot")!==-1||l.indexOf("→ cc")!==-1||l.indexOf("to cc")!==-1)
     return{bg:"rgba(96,165,250,.13)",border:"rgba(96,165,250,.45)",color:"#60a5fa"};     // blue
 
-  if(l.indexOf("04.")===0||l.indexOf("lexington")!==-1)
+  if(l.indexOf("04.")===0||l.indexOf("needs docs")!==-1)
+    return{bg:"rgba(96,165,250,.13)",border:"rgba(96,165,250,.45)",color:"#60a5fa"};     // blue (same as 03)
+
+  if(l.indexOf("05.")===0||l.indexOf("lexington")!==-1)
     return{bg:"rgba(167,139,250,.15)",border:"rgba(167,139,250,.5)",color:"#c4b5fd"};    // violet / lavender
 
   // ━━━ LEGACY STATUSES ━━━
@@ -3535,7 +3543,7 @@ function openSMSPicker(ri){
   //     - 02. MCA Approved + score < 650  → mca.approved
   //     - 00. New / fresh                 → mca.intro
   //     - 01. MCA Sent                    → mca.checkin
-  //     - 04. Sent to Lexington           → cc.checkin
+  //     - 05. Sent to Lexington           → cc.checkin
   //     - Declined / garbage              → null
   //
   // Product disambiguation: the lead's Tags column tells us if they applied
@@ -3556,13 +3564,32 @@ function openSMSPicker(ri){
                st.indexOf("pivot")!==-1 || st.indexOf("lexington")!==-1;
     var product = isCC ? "cc" : "mca";
 
-    // ============== 0. TAG-DRIVEN SUGGESTIONS ==============
-    // Explicit "📎 Needs Docs" tag → the Needs Fix / Resend templates
-    // for whichever product the lead is on. Takes priority over notes/status.
-    if(/needs docs|needs doc/i.test(tags)){
+    // ============== 0a. STATUS: 04. Needs Docs → needs_fix templates ==============
+    // Highest priority — if the pipeline is blocked on docs, that's the message to send.
+    if(st.indexOf("04.")===0 || st.indexOf("needs docs")!==-1){
       return {product:product,stage:"needs_fix",
               label:"Needs Fix / Resend",
-              reason:"Tagged as needs docs"};
+              reason:"Status: Needs Docs — request the right file"};
+    }
+    // ============== 0b. TAG-DRIVEN: 🔥 Moving Forward ==============
+    // Active MCA deal in motion. Routes depending on where we are in the pipeline:
+    //   - Not yet approved (00/01) → check in on underwriting
+    //   - Already approved (02)    → closing stage (contracts/verification/fund)
+    //   - Pivot phase (03)         → pivot_credit templates
+    if(/moving forward|in the works|in progress/i.test(tags)){
+      if(st.indexOf("02.")!==-1 || st.indexOf("approv")!==-1){
+        return {product:"mca",stage:"closing",
+                label:"Move to signing & funding",
+                reason:"Approved + moving forward — close it out"};
+      }
+      if(st.indexOf("03.")!==-1 || st.indexOf("pivot")!==-1){
+        return {product:"mca",stage:"pivot_credit",
+                label:"Pivot to 0% credit line",
+                reason:"Moving forward on pivot"};
+      }
+      return {product:"mca",stage:"checkin",
+              label:"Follow-up on underwriting",
+              reason:"Working toward approval"};
     }
 
     // ============== 1. NOTES-DRIVEN SUGGESTIONS ==============
@@ -3666,7 +3693,7 @@ function openSMSPicker(ri){
               label:"Follow-up",
               reason:"Waiting on bank — check in"};
     }
-    if(st.indexOf("lexington")!==-1 || st.indexOf("04.")!==-1){
+    if(st.indexOf("lexington")!==-1 || st.indexOf("05.")!==-1){
       return {product:"cc",stage:"checkin",
               label:"Follow-up on Lexington",
               reason:"In Lexington stage — check in"};
