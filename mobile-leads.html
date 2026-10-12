@@ -655,8 +655,7 @@ function closeStatusPicker(){$("status-ov").classList.remove("open");_spIdx=null
 // in play, not from presets. Add more here only when the mobile picker
 // really needs a specific tag that isn't on any lead yet.
 const PRESET_TAGS = [
-  "📎 Needs Docs",       // missing docs or wrong file submitted — resend required
-  "🔥 Moving Forward"    // active deal — either working on approval or approved + client moving to sign/fund
+  "📎 Needs Docs"   // missing docs or wrong file submitted — resend required
 ];
 let _tpIdx=null;            // index of lead being edited
 let ALL_TAGS=[];            // every known tag from col F validation + actually-used cells
@@ -3558,31 +3557,12 @@ function openSMSPicker(ri){
     var product = isCC ? "cc" : "mca";
 
     // ============== 0. TAG-DRIVEN SUGGESTIONS ==============
-    // Explicit "📎 Needs Docs" → the Needs Fix / Resend templates.
+    // Explicit "📎 Needs Docs" tag → the Needs Fix / Resend templates
+    // for whichever product the lead is on. Takes priority over notes/status.
     if(/needs docs|needs doc/i.test(tags)){
       return {product:product,stage:"needs_fix",
               label:"Needs Fix / Resend",
               reason:"Tagged as needs docs"};
-    }
-    // "🔥 Moving Forward" — active MCA deal in motion. Routes depending on
-    // where we are in the pipeline:
-    //   - Not yet approved (00/01) → check in on underwriting
-    //   - Already approved (02)    → closing stage (contracts/verification/fund)
-    //   - Pivot phase (03)         → pivot_credit templates
-    if(/moving forward|in the works|in progress/i.test(tags)){
-      if(st.indexOf("02.")!==-1 || st.indexOf("approv")!==-1){
-        return {product:"mca",stage:"closing",
-                label:"Move to signing & funding",
-                reason:"Approved + moving forward — close it out"};
-      }
-      if(st.indexOf("03.")!==-1 || st.indexOf("pivot")!==-1){
-        return {product:"mca",stage:"pivot_credit",
-                label:"Pivot to 0% credit line",
-                reason:"Moving forward on pivot"};
-      }
-      return {product:"mca",stage:"checkin",
-              label:"Follow-up on underwriting",
-              reason:"Working toward approval"};
     }
 
     // ============== 1. NOTES-DRIVEN SUGGESTIONS ==============
