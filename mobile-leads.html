@@ -2208,16 +2208,19 @@ function statusStyle(ls){
   if(l.indexOf("02.")===0||l.indexOf("approv")!==-1)
     return{bg:"rgba(52,211,153,.13)",border:"rgba(52,211,153,.45)",color:"#34d399"};     // green
 
-  // 03 Pivot and 04 Needs Docs share the same BLUE — same task, same hierarchy
-  // (both are "client applied, we need their credit report / correct docs").
+  // 03 Pivot and 04 Missing Report share BLUE — both "client applied, we need correct docs"
   if(l.indexOf("03.")===0||l.indexOf("pivot")!==-1||l.indexOf("→ cc")!==-1||l.indexOf("to cc")!==-1)
     return{bg:"rgba(96,165,250,.13)",border:"rgba(96,165,250,.45)",color:"#60a5fa"};     // blue
 
-  if(l.indexOf("04.")===0||l.indexOf("needs docs")!==-1)
+  if(l.indexOf("04.")===0||l.indexOf("missing report")!==-1||l.indexOf("needs docs")!==-1||l.indexOf("wrong doc")!==-1||l.indexOf("wrong file")!==-1||l.indexOf("wrong format")!==-1)
     return{bg:"rgba(96,165,250,.13)",border:"rgba(96,165,250,.45)",color:"#60a5fa"};     // blue (same as 03)
 
+  // 06 Lex Pre-Approved checked BEFORE 05 Lexington so the longer status wins.
+  if(l.indexOf("06.")===0||l.indexOf("pre-approv")!==-1||l.indexOf("pre approv")!==-1||l.indexOf("schedule call")!==-1)
+    return{bg:"rgba(52,211,153,.13)",border:"rgba(52,211,153,.45)",color:"#34d399"};     // green — Lex approval = win
+
   if(l.indexOf("05.")===0||l.indexOf("lexington")!==-1)
-    return{bg:"rgba(167,139,250,.15)",border:"rgba(167,139,250,.5)",color:"#c4b5fd"};    // violet / lavender
+    return{bg:"rgba(167,139,250,.15)",border:"rgba(167,139,250,.5)",color:"#c4b5fd"};    // lavender
 
   // ━━━ LEGACY STATUSES ━━━
   // Kept so any lingering old-status rows (pre-rewrite) still get a reasonable
@@ -3564,12 +3567,23 @@ function openSMSPicker(ri){
                st.indexOf("pivot")!==-1 || st.indexOf("lexington")!==-1;
     var product = isCC ? "cc" : "mca";
 
-    // ============== 0a. STATUS: 04. Needs Docs → needs_fix templates ==============
-    // Highest priority — if the pipeline is blocked on docs, that's the message to send.
-    if(st.indexOf("04.")===0 || st.indexOf("needs docs")!==-1){
-      return {product:product,stage:"needs_fix",
-              label:"Needs Fix / Resend",
-              reason:"Status: Needs Docs — request the right file"};
+    // ============== 0a. STATUS: 04. Missing Report → needs_fix templates ==============
+    // Highest priority — the specific issue lives in the notes, and the notes-driven
+    // section below picks the right template (HTML, bank stmts, summary, etc.).
+    // If notes don't match any specific pattern, we fall through to needs_fix generic.
+    // 06. Lex Pre-Approved checked FIRST so "pre-approved" wins over bare "approved".
+    if(st.indexOf("06.")===0 || st.indexOf("pre-approv")!==-1 || st.indexOf("pre approv")!==-1 || st.indexOf("schedule call")!==-1){
+      return {product:"cc",stage:"soft_approval",
+              label:"Pre-approved — schedule the call",
+              reason:"Lexington pre-approval in · time to lock the bank team call"};
+    }
+    if(st.indexOf("04.")===0 || st.indexOf("missing report")!==-1 || st.indexOf("needs docs")!==-1){
+      // The specific needs_fix template is picked by the NOTES logic below (section 1).
+      // If notes are empty or don't match a pattern, we fall through to a generic
+      // needs_fix suggestion. Set a hint so the SMS card can show "look at notes".
+      // (Fall through intentionally — don't return here. The notes section catches
+      // the specific case first; if nothing matches, section 2 catches it with
+      // generic "Needs Fix / Resend".)
     }
     // ============== 0b. TAG-DRIVEN: 🔥 Moving Forward ==============
     // Active MCA deal in motion. Routes depending on where we are in the pipeline:
@@ -3693,7 +3707,14 @@ function openSMSPicker(ri){
               label:"Follow-up",
               reason:"Waiting on bank — check in"};
     }
-    if(st.indexOf("lexington")!==-1 || st.indexOf("05.")!==-1){
+    // 04. Missing Report + no notes → generic needs_fix fallback
+    // (specific notes patterns already caught in section 1 above)
+    if(st.indexOf("04.")===0 || st.indexOf("missing report")!==-1 || st.indexOf("needs docs")!==-1){
+      return {product:product,stage:"needs_fix",
+              label:"Needs Fix / Resend",
+              reason:"Missing Report — pick the specific issue in templates"};
+    }
+    if(st.indexOf("05.")===0 || st.indexOf("lexington")!==-1){
       return {product:"cc",stage:"checkin",
               label:"Follow-up on Lexington",
               reason:"In Lexington stage — check in"};
@@ -3765,14 +3786,18 @@ function openSMSPicker(ri){
       // underwriting (wrong format, incomplete, outdated). Every template:
       // opens with who you are, thanks them for completing the app, says
       // specifically what's wrong, and asks for the fix emailed to Sam.
+      // All first-touch friendly — opens with "thanks for completing the application"
+      // (true from Jotform), then names what underwriting needs and why.
+      // ─── Sam's voice: first-touch needs_fix templates ──────────────────
+      // Same pattern as CC needs_fix: review, specific observation, explain
+      // WHY, give agency, close with Sam's next action.
       needs_fix:{label:"Needs Fix / Resend",icon:"⚠️",templates:[
-        {l:"Bank stmts as photo (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application for "+bizNice+". The bank statements you sent came through as photos / screenshots which underwriting can't process. Could you log into your bank, download the last 3 months as PDFs, and email them to sam@lendiago.com? Takes about a minute per statement."},
-        // Wrong doc type sent — credit report instead of bank stmts
-        {l:"Sent credit report (need bank stmts)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for sending that over. For the revenue-based program, underwriting actually needs your last 3 months of business bank statements (not the credit report). Could you log into your bank, download them as PDFs, and email them to sam@lendiago.com?"},
-        {l:"Need more months of statements",b:"Hi "+first+", this is Sam with "+brand+". Thanks for sending over what you have. Underwriting needs the last 3 full months of bank statements to issue an offer. Could you pull the remaining ones as PDFs from online banking and email them to sam@lendiago.com?"},
-        {l:"Statement missing most recent month",b:"Hi "+first+", this is Sam with "+brand+". Thanks for the statements. Underwriting flagged that your most recent month isn't in there. Could you grab that one as a PDF from online banking and email it to sam@lendiago.com?"},
-        {l:"Need DL + voided check",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application. To finalize I'll need a clear photo of your driver's license and a voided check. You can text them to this number or email to sam@lendiago.com."},
-        {l:"Generic fix needed",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application for "+bizNice+". There's one issue with what you submitted that we need to fix before underwriting can move forward: [specify]. Please email the corrected version to sam@lendiago.com."},
+        {l:"Bank stmts as photo (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". The bank statements came through as photos, which underwriting can't process. If you can log into your bank and download the last 3 months as PDFs, that'll let us run the full numbers. Takes about a minute per statement. Email them to sam@lendiago.com whenever you've got them and I'll review everything and let you know what options we have."},
+        {l:"Need bank stmts (sent credit report)",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". You sent over the credit report, but for the revenue-based program, underwriting needs the last 3 months of business bank statements as PDFs so we can see the real revenue picture and determine exact funding numbers for you. If you can log into your bank and download them, email them to sam@lendiago.com and I'll review everything from there."},
+        {l:"Need more months of statements",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". To issue an offer, underwriting needs the last 3 full months of bank statements so we can get a complete revenue picture. You can pull the missing ones as PDFs from online banking and email to sam@lendiago.com. Once I have them all, I'll review and let you know what options we have."},
+        {l:"Statement missing most recent month",b:"Hi "+first+", this is Sam with "+brand+". I was going over your application for "+bizNice+" and noticed the most recent month of bank statements isn't in there. If you can grab that one as a PDF from online banking and email to sam@lendiago.com, I'll finalize the review and get back to you with options."},
+        {l:"Need DL + voided check",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". To finalize everything I'll need a clear photo of your driver's license and a voided check. You can text them to this number or email to sam@lendiago.com, whichever's easier. Once I have those, I'll wrap things up on my end."},
+        {l:"Generic — review found an issue",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+" and want to flag one thing before we finalize: [specify]. Once that's resolved, I'll review everything and let you know what options we have."},
       ]},
 
       checkin:{label:"Follow-Up",icon:"👋",templates:[
@@ -3813,17 +3838,37 @@ function openSMSPicker(ri){
       // outdated pull). Every template: opens with who you are, thanks them
       // for completing the app, names the exact issue, and asks for the fix
       // emailed to Sam.
+      // Every template here is written as a FIRST-TOUCH message. Opens with
+      // "this is Sam with [brand]" + "thanks for completing the application for
+      // [bizNice]" (accurate — they DID complete an application via Jotform), then
+      // explains what underwriting needs and why. No "thanks for sending those
+      // over" phrasing — that implies ongoing conversation.
+      // ─── Sam's voice: first-touch needs_fix templates ──────────────────
+      // Opens with "I was reviewing your application and noticed X."
+      // Explains the WHY (approval criteria, complete snapshot, exact numbers).
+      // Gives agency ("any method you prefer").
+      // Offers Credit Hero Score as the easy path.
+      // Closes with Sam's next action ("I'll review and let you know what options we have").
+      // No "thanks for sending" fluff. No em-dashes.
       needs_fix:{label:"Needs Fix / Resend",icon:"⚠️",templates:[
-        // The exact scenario Sam mentioned — tri-merge came as HTML
-        {l:"Tri-merge as HTML (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application for "+bizNice+". The tri-merge credit report you sent came through as an HTML file which our underwriting can't open. Could you pull it again and save it as a PDF, then email it to sam@lendiago.com?"},
-        // Wrong doc type sent — bank stmts instead of credit report
-        {l:"Sent bank stmts (need credit report)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for sending those over. For the 0% business credit line program, underwriting actually needs a tri-merge credit report (not bank statements). Could you pull a tri-merge from all 3 bureaus as a PDF and email it to sam@lendiago.com?"},
-        {l:"Tri-merge is summary (need full)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for sending the credit report. What came through is the summary page, but underwriting needs the full tri-merge report (all 3 bureaus, all accounts, full history). Could you re-pull the complete report as a PDF and email it to sam@lendiago.com?"},
-        {l:"Only 1 bureau (need all 3)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for the credit report. It only shows one bureau though, and underwriting needs all three (Experian, TransUnion, Equifax) on a single tri-merge report. Could you re-pull as a tri-merge PDF and email it to sam@lendiago.com?"},
-        {l:"Report too old (need current)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for the credit report. The pull date on this one is a few months out so underwriting needs a fresh one. Could you re-pull and send as a PDF to sam@lendiago.com?"},
-        {l:"Screenshot of score (need full report)",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application. The score screenshot works for ballpark but underwriting needs the full tri-merge credit report as a PDF to issue an approval. Could you pull one and email it to sam@lendiago.com?"},
-        {l:"Need DL / voided check",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application. To move forward I'll need a clear photo of your driver's license and a voided check. Text them to this number or email to sam@lendiago.com."},
-        {l:"Generic fix needed",b:"Hi "+first+", this is Sam with "+brand+". Thanks for completing the application for "+bizNice+". There's one issue with what you submitted that we need to fix before underwriting can move forward: [specify]. Please email the corrected version to sam@lendiago.com."},
+        // THE DAVID L WEST SCENARIO — applied with bank stmts for CC path
+        {l:"Applied w/ bank stmts (need credit report)",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". You sent bank statements, but for the 0% credit line program, underwriting needs a tri-merge credit report from all 3 bureaus (Equifax, Experian, TransUnion) as a PDF so we can get a complete snapshot and determine exact funding numbers for you. You can pull it any way you prefer. If you need an easy option, you can generate a tri-merge at credithero.com. Once you send it over, I'll review everything and let you know what options we have."},
+        // MCA → CC pivot (first touch)
+        {l:"Convert MCA → CC (first touch)",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+" and I think our 0% introductory credit line program would be a stronger fit for you than the revenue-based option. 0% intro APR, no daily payments, access to the capital on your own schedule. To underwrite that program we'll need a tri-merge credit report (all 3 bureaus) as a PDF. You can pull one any way you prefer. If you need an easy option: credithero.com. Once you send it over, I'll review and let you know what options we have available."},
+        // Classic HTML tri-merge (Maria scenario)
+        {l:"Tri-merge as HTML (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". I was going over your application for "+bizNice+". The tri-merge credit report came through as an HTML file and underwriting can't open those. Could you re-pull it and save it as a PDF this time? You can use any provider you prefer, or credithero.com if you want an easy option. Once you resend, I'll review everything and get back to you with options."},
+        // Partial / summary report
+        {l:"Tri-merge is summary (need full)",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". The credit report included is just the summary page, but underwriting needs the full tri-merge (all 3 bureaus, all accounts, full history) as a PDF so we can get a complete snapshot. You can re-pull it any way you prefer, or use credithero.com for an easy tri-merge. Once I have the full report, I'll review and let you know what options we have."},
+        // Only 1 bureau (the Shay scenario — your real email)
+        {l:"Only 1 bureau (need all 3)",b:"Hi "+first+", this is Sam with "+brand+". Based on the report provided, your score is in a decent range and the other two bureaus should be similar or higher. Since you're right on the border of our approval criteria, it's worth sending over the remaining two so we can get a complete snapshot and determine exact funding numbers for you. You can pull the reports any way you prefer as long as we receive all three (Equifax, Experian, TransUnion). If you need an easy option, you can generate a tri-merge at credithero.com. Once you send those over, I'll review everything and let you know what options we have available."},
+        // Stale report
+        {l:"Report too old (need current)",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". The pull date on the credit report is a few months old, so underwriting needs a fresh one to work from accurate numbers. You can re-pull any way you prefer, or use credithero.com for a quick tri-merge. Once you send the updated report, I'll review and let you know what options we have."},
+        // Screenshot instead of full report
+        {l:"Score screenshot (need full report)",b:"Hi "+first+", this is Sam with "+brand+". I was going over your application for "+bizNice+". The score screenshot is helpful for a ballpark but underwriting needs the full tri-merge credit report as a PDF to issue an approval and determine exact numbers for you. You can pull it any way you prefer, or use credithero.com for an easy tri-merge. Once you send it over, I'll review everything and let you know what options we have."},
+        // DL / voided check
+        {l:"Need DL / voided check",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". To move forward I'll need a clear photo of your driver's license and a voided check. You can text them to this number or email to sam@lendiago.com, whichever's easier. Once I have those, I'll finalize everything on my end."},
+        // Generic fallback
+        {l:"Generic — review found an issue",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+" and want to flag one thing before we can finalize: [specify]. Once that's cleared up, I'll review everything and let you know what options we have."},
       ]},
 
       checkin:{label:"Follow-Up",icon:"🔄",templates:[
