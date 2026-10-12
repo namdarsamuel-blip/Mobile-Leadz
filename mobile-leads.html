@@ -648,6 +648,16 @@ function closeInfoEdit(){$("info-edit-ov").classList.remove("open");_ieIdx=null;
 function closeStatusPicker(){$("status-ov").classList.remove("open");_spIdx=null;}
 
 // ── TAG PICKER ──────────────────────────────────────────────────────────────
+// Preset situation-tags — always available in the picker regardless of
+// usage history. Just the one Sam needed: captures both "missing docs" and
+// "wrong file sent" (HTML tri-merge, bank stmts for CC applicant, etc.).
+// Keep this list short — tags people actually use come from leads already
+// in play, not from presets. Add more here only when the mobile picker
+// really needs a specific tag that isn't on any lead yet.
+const PRESET_TAGS = [
+  "📎 Needs Docs",       // missing docs or wrong file submitted — resend required
+  "🔥 Moving Forward"    // active deal — either working on approval or approved + client moving to sign/fund
+];
 let _tpIdx=null;            // index of lead being edited
 let ALL_TAGS=[];            // every known tag from col F validation + actually-used cells
 let _tpSelected=new Set();  // tags currently on this lead (working set, not committed yet)
@@ -664,6 +674,15 @@ function openTagPicker(idx){
   // with whatever tags are in use — fetch only adds new ones from validation later
   const seen={};
   ALL_TAGS=[];
+  // 1. Seed with preset situation-tags so they're always offered, even if
+  //    nobody is tagged with them yet. These take the top spots.
+  PRESET_TAGS.forEach(function(v){
+    if(v&&!seen[v.toLowerCase()]){
+      seen[v.toLowerCase()]=true;
+      ALL_TAGS.push(v);
+    }
+  });
+  // 2. Then add every tag already in use on current contacts.
   contacts.forEach(function(ct){
     (ct.tags||"").split(",").forEach(function(part){
       const v=part.trim();
@@ -2155,15 +2174,55 @@ function startTick(){
 
 function statusStyle(ls){
   if(!ls)return null;const l=ls.toLowerCase();
-  // Match Google Sheet dropdown colors exactly
-  if(l.includes("final"))        return{bg:"rgba(167,139,250,.15)",border:"rgba(167,139,250,.5)",color:"#c4b5fd"};      // purple (matches app accent)
-  if(l.includes("beat"))         return{bg:"rgba(234,67,53,.13)",border:"rgba(234,67,53,.45)",color:"#f87171"};       // red
-  if(l.includes("approv"))       return{bg:"rgba(52,211,153,.13)",border:"rgba(52,211,153,.45)",color:"#34d399"};     // green
-  if(l.includes("app sent"))     return{bg:"rgba(59,130,246,.13)",border:"rgba(59,130,246,.45)",color:"#60a5fa"};     // blue
-  if(l.includes("app in"))       return{bg:"rgba(234,179,8,.13)",border:"rgba(234,179,8,.45)",color:"#fbbf24"};       // yellow
-  if(l.includes("intrest")||l.includes("interest")) return{bg:"rgba(249,115,22,.13)",border:"rgba(249,115,22,.45)",color:"#fb923c"}; // orange
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // CURRENT 8-STATUS SET — mobile palette mirrors the Google Sheet CF palette
+  // applied via MobileLeads menu → 🎨 Apply Lead Status colors (CF).
+  // Sheet uses pale pastels for black text; mobile uses the SAME HUES translated
+  // to dark-mode-friendly accent colors (brighter chip text on a translucent fill).
+  //
+  //   Status                        Sheet pastel      Mobile accent
+  //   ──────────────────────────── ───────────────── ─────────────────
+  //   00. New                     manila  #f6e8c7   warm cream #f6e8c7
+  //   01. MCA Sent                peach   #fbd4b1   orange     #fb923c
+  //   02. MCA Approved            green   #cfeab8   green      #34d399
+  //   03. MCA → CC Pivot          blue    #b7d8f1   blue       #60a5fa
+  //   04. Sent to Lexington       lavender#e2d4f0   violet     #c4b5fd
+  //   100/110/120 Declined/Garbage red     #f3bebe   red        #f87171
+  //
+  // Match by number prefix first (most reliable), then by keyword fallback so a
+  // typo'd status still looks right. Decline check comes BEFORE Lexington so
+  // "Lexington Declined" lands on red, not lavender.
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  if(l.indexOf("100.")===0||l.indexOf("110.")===0||l.indexOf("120.")===0||
+     l.indexOf("declin")!==-1||l.indexOf("garbage")!==-1||l.indexOf("dead")!==-1)
+    return{bg:"rgba(248,113,113,.13)",border:"rgba(248,113,113,.45)",color:"#f87171"};   // red
+
+  if(l.indexOf("00.")===0||l.indexOf("00. new")!==-1||l==="new")
+    return{bg:"rgba(246,232,199,.14)",border:"rgba(246,232,199,.5)",color:"#f6e8c7"};    // manila
+
+  if(l.indexOf("01.")===0||l.indexOf("mca sent")!==-1)
+    return{bg:"rgba(249,115,22,.13)",border:"rgba(249,115,22,.45)",color:"#fb923c"};     // orange
+
+  if(l.indexOf("02.")===0||l.indexOf("approv")!==-1)
+    return{bg:"rgba(52,211,153,.13)",border:"rgba(52,211,153,.45)",color:"#34d399"};     // green
+
+  if(l.indexOf("03.")===0||l.indexOf("pivot")!==-1||l.indexOf("→ cc")!==-1||l.indexOf("to cc")!==-1)
+    return{bg:"rgba(96,165,250,.13)",border:"rgba(96,165,250,.45)",color:"#60a5fa"};     // blue
+
+  if(l.indexOf("04.")===0||l.indexOf("lexington")!==-1)
+    return{bg:"rgba(167,139,250,.15)",border:"rgba(167,139,250,.5)",color:"#c4b5fd"};    // violet / lavender
+
+  // ━━━ LEGACY STATUSES ━━━
+  // Kept so any lingering old-status rows (pre-rewrite) still get a reasonable
+  // color on mobile instead of generic gray. New status work should go in the
+  // 8-status block above.
+  if(l.includes("final"))        return{bg:"rgba(167,139,250,.15)",border:"rgba(167,139,250,.5)",color:"#c4b5fd"};
+  if(l.includes("beat"))         return{bg:"rgba(234,67,53,.13)",border:"rgba(234,67,53,.45)",color:"#f87171"};
+  if(l.includes("app sent"))     return{bg:"rgba(59,130,246,.13)",border:"rgba(59,130,246,.45)",color:"#60a5fa"};
+  if(l.includes("app in"))       return{bg:"rgba(234,179,8,.13)",border:"rgba(234,179,8,.45)",color:"#fbbf24"};
+  if(l.includes("intrest")||l.includes("interest")) return{bg:"rgba(249,115,22,.13)",border:"rgba(249,115,22,.45)",color:"#fb923c"};
   if(l.includes("submit")||l.includes("pending"))   return{bg:"rgba(99,102,241,.12)",border:"rgba(99,102,241,.35)",color:"#818cf8"};
-  if(l.includes("neutral"))      return{bg:"rgba(255,255,255,.07)",border:"rgba(255,255,255,.2)",color:"#fff"};       // white
+  if(l.includes("neutral"))      return{bg:"rgba(255,255,255,.07)",border:"rgba(255,255,255,.2)",color:"#fff"};
   if(l.includes("absent")||l.includes("085. wait")) return{bg:"rgba(245,158,11,.12)",border:"rgba(245,158,11,.35)",color:"#fbbf24"};
   if(l.includes("down")||l.includes("reject")||l.includes("mafi")) return{bg:"rgba(240,68,68,.1)",border:"rgba(240,68,68,.3)",color:"#f87171"};
   if(l.includes("missing"))      return{bg:"rgba(251,191,36,.12)",border:"rgba(251,191,36,.35)",color:"#fde68a"};
@@ -3497,6 +3556,34 @@ function openSMSPicker(ri){
     var isCC = /credit card|credit line|cc\b|0%/i.test(tags) ||
                st.indexOf("pivot")!==-1 || st.indexOf("lexington")!==-1;
     var product = isCC ? "cc" : "mca";
+
+    // ============== 0. TAG-DRIVEN SUGGESTIONS ==============
+    // Explicit "📎 Needs Docs" → the Needs Fix / Resend templates.
+    if(/needs docs|needs doc/i.test(tags)){
+      return {product:product,stage:"needs_fix",
+              label:"Needs Fix / Resend",
+              reason:"Tagged as needs docs"};
+    }
+    // "🔥 Moving Forward" — active MCA deal in motion. Routes depending on
+    // where we are in the pipeline:
+    //   - Not yet approved (00/01) → check in on underwriting
+    //   - Already approved (02)    → closing stage (contracts/verification/fund)
+    //   - Pivot phase (03)         → pivot_credit templates
+    if(/moving forward|in the works|in progress/i.test(tags)){
+      if(st.indexOf("02.")!==-1 || st.indexOf("approv")!==-1){
+        return {product:"mca",stage:"closing",
+                label:"Move to signing & funding",
+                reason:"Approved + moving forward — close it out"};
+      }
+      if(st.indexOf("03.")!==-1 || st.indexOf("pivot")!==-1){
+        return {product:"mca",stage:"pivot_credit",
+                label:"Pivot to 0% credit line",
+                reason:"Moving forward on pivot"};
+      }
+      return {product:"mca",stage:"checkin",
+              label:"Follow-up on underwriting",
+              reason:"Working toward approval"};
+    }
 
     // ============== 1. NOTES-DRIVEN SUGGESTIONS ==============
     // The notes column often spells out the exact issue. Catch those first.
