@@ -2184,12 +2184,13 @@ function statusStyle(ls){
   //   Status                             Sheet pastel      Mobile accent
   //   ─────────────────────────────── ───────────────── ─────────────────
   //   00. New                           manila  #f6e8c7   warm cream #f6e8c7
-  //   01. Lex Pre-Approved — Call       green   #cfeab8   green      #34d399 (HOT)
+  //   01. Lex Approved — Call           green   #cfeab8   green      #34d399 (HOT)
   //   02. MCA Approved                  green   #cfeab8   green      #34d399
   //   03. MCA → CC Pivot                blue    #b7d8f1   blue       #60a5fa
   //   04. Missing Report                blue    #b7d8f1   blue       #60a5fa (same as 03)
   //   05. MCA Sent                      peach   #fbd4b1   orange     #fb923c
   //   06. Sent to Lexington             lavender#e2d4f0   violet     #c4b5fd
+  //   07. Cold — Had Approval           slate   #d9d9d9   slate      #94a3b8 (parked)
   //   100/110/120 Declined/Garbage      red     #f3bebe   red        #f87171
   //
   // Match by number prefix first (most reliable), then by keyword fallback so a
@@ -2207,8 +2208,9 @@ function statusStyle(ls){
   if(l.indexOf("00.")===0||l==="new")
     return{bg:"rgba(246,232,199,.14)",border:"rgba(246,232,199,.5)",color:"#f6e8c7"};    // manila
 
-  // 01. Lex Pre-Approved — green (HOT, call NOW). Checked BEFORE bare "approved".
-  if(l.indexOf("01.")===0||l.indexOf("pre-approv")!==-1||l.indexOf("pre approv")!==-1||l.indexOf("schedule call")!==-1)
+  // 01. Lex Approved — Call — green (HOT, call NOW). Checked BEFORE bare "approved".
+  // Catches both the new short label and any legacy "Pre-Approved" / "Schedule Call" variants.
+  if(l.indexOf("01.")===0||l.indexOf("lex approv")!==-1||l.indexOf("pre-approv")!==-1||l.indexOf("pre approv")!==-1||l.indexOf("schedule call")!==-1)
     return{bg:"rgba(52,211,153,.13)",border:"rgba(52,211,153,.45)",color:"#34d399"};     // green — call NOW
 
   // 02. MCA Approved — green
@@ -2230,6 +2232,12 @@ function statusStyle(ls){
   // 06. Sent to Lexington — lavender (waiting on partner)
   if(l.indexOf("06.")===0||l.indexOf("lexington")!==-1)
     return{bg:"rgba(167,139,250,.15)",border:"rgba(167,139,250,.5)",color:"#c4b5fd"};    // lavender
+
+  // 07. Cold — Had Approval — slate gray (parked: approval on file if they come back)
+  // Deliberately muted so it visually recedes vs the active pipeline above, but
+  // doesn't look like a decline. Clear signal: "warm history, cold now."
+  if(l.indexOf("07.")===0||l.indexOf("cold")!==-1||l.indexOf("had approval")!==-1)
+    return{bg:"rgba(148,163,184,.14)",border:"rgba(148,163,184,.4)",color:"#94a3b8"};    // slate gray
 
   // ━━━ LEGACY STATUSES ━━━
   // Kept so any lingering old-status rows (pre-rewrite) still get a reasonable
@@ -3576,13 +3584,26 @@ function openSMSPicker(ri){
                st.indexOf("pivot")!==-1 || st.indexOf("lexington")!==-1;
     var product = isCC ? "cc" : "mca";
 
-    // ============== 0a. STATUS: 01. Lex Pre-Approved → soft_approval (HOT) ==============
-    // Checked FIRST so "pre-approved" wins over bare "approved" matches below.
-    // This is the hottest status in the pipeline — call them NOW.
-    if(st.indexOf("01.")===0 || st.indexOf("pre-approv")!==-1 || st.indexOf("pre approv")!==-1 || st.indexOf("schedule call")!==-1){
+    // ============== 0a. STATUS: 01. Lex Approved — Call → soft_approval (HOT) ==============
+    // Checked FIRST so "lex approved" wins over bare "approved" matches below.
+    // This is the hottest status in the pipeline — call them NOW. Catches the new
+    // short label plus any legacy "Pre-Approved" / "Schedule Call" variants.
+    if(st.indexOf("01.")===0 || st.indexOf("lex approv")!==-1 || st.indexOf("pre-approv")!==-1 || st.indexOf("pre approv")!==-1 || st.indexOf("schedule call")!==-1){
       return {product:"cc",stage:"soft_approval",
-              label:"Pre-approved — schedule the call",
-              reason:"Lexington pre-approval in · call them now"};
+              label:"Lex approved — schedule the call",
+              reason:"Lex pre-approval in · call them now"};
+    }
+    // ============== 0a2. STATUS: 07. Cold — Had Approval → reengage ==============
+    // Parked lead that previously had an approval (MCA or Lex). The approval's
+    // still on file — if they come back, close them. Smart SMS routes to a
+    // product-aware re-engagement template.
+    if(st.indexOf("07.")===0 || st.indexOf("cold")!==-1 || st.indexOf("had approval")!==-1){
+      // If tags/notes hint at Lex/credit card history, use the CC reengage
+      // template that references the Lex pre-approval. Otherwise MCA reengage.
+      var wasCC = /credit card|credit line|cc\b|0%|lex/i.test(tags) || /lex|pre-approv|pre approv/i.test(notes);
+      return {product: wasCC ? "cc" : "mca", stage:"reengage",
+              label:"Re-engage — approval still on file",
+              reason:"Cold with approval on file · worth one more touch"};
     }
     // ============== 0b. STATUS: 04. Missing Report → needs_fix templates ==============
     // The specific issue lives in the notes, and the notes-driven section below
@@ -3813,6 +3834,17 @@ function openSMSPicker(ri){
         {l:"Just checking in",b:"Hi "+first+", just checking in on your file. Whenever you have a moment, let me know how you'd like to proceed."},
         {l:"Here when you're ready",b:"Hi "+first+", no pressure on my end. Keeping your file open. Just reply here whenever you'd like to pick it back up."},
       ]},
+
+      // ─── RE-ENGAGE — had an MCA approval, went cold ───────────────────
+      // The approval's still on file. These texts acknowledge the prior win
+      // so it doesn't feel like a cold outreach — "your approval is still good."
+      // Short, direct, Sam-voice (lead is already in the thread).
+      reengage:{label:"Re-engage — Approval on File",icon:"🔁",templates:[
+        {l:"Approval still good",b:"Hi "+first+", your approval is still on file. Want to pick back up?"},
+        {l:"Approval + amount",b:"Hi "+first+", you were approved for $[X]. That's still good on our end — lmk if you want to move forward."},
+        {l:"Last check-in",b:"Hi "+first+", haven't heard back in a bit. Approval's still good if you want to lock it in. Otherwise I'll close out the file."},
+        {l:"Soft nudge",b:"Hi "+first+", circling back one more time. Approval's still on file — happy to move forward whenever you are."},
+      ]},
     }},
 
     // ─────────────────────────────────────────────────────────────────────
@@ -3875,6 +3907,17 @@ function openSMSPicker(ri){
       checkin:{label:"Follow-Up",icon:"🔄",templates:[
         {l:"Checking on report",b:"Hi "+first+", following up. Were you able to pull your credit report?"},
         {l:"Here when you're ready",b:"Hi "+first+", 0% window is still open on our end. Reply here whenever you'd like to pick it back up."},
+      ]},
+
+      // ─── RE-ENGAGE — had a Lex pre-approval, went cold ────────────────
+      // Prior Lex pre-approval is still on file. These texts reference the
+      // approval so it doesn't read as cold outreach — "your approval's still
+      // good, want to lock in that call?"
+      reengage:{label:"Re-engage — Lex Approval on File",icon:"🔁",templates:[
+        {l:"Lex approval still good",b:"Hi "+first+", your Lex pre-approval is still on file. Want to pick back up and get that call scheduled?"},
+        {l:"Approval + range",b:"Hi "+first+", you were pre-approved for up to $[X]–$[Y]. That's still good on our end — want to lock in a quick call?"},
+        {l:"Last check-in",b:"Hi "+first+", haven't heard back in a bit. Pre-approval's still good if you want to schedule the call. Otherwise I'll close out the file."},
+        {l:"Soft nudge",b:"Hi "+first+", circling back one more time. Approval's still on file — just reply here if you want to pick it up."},
       ]},
     }},
   };
