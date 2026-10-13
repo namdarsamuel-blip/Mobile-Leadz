@@ -3602,6 +3602,10 @@ function openSMSPicker(ri){
     var tags=(String(ctx.tags||"")+"").toLowerCase();
     // Combine both notes columns — your notes first (higher signal)
     var notes=((String(ctx.notes||"")+" "+String(ctx.lexingtonNotes||""))+"").toLowerCase();
+    // Approvals col (K): has the $ range / terms we quote in texts, so we read
+    // it to pick the "with numbers" template over the "no numbers" one.
+    var approvals=((String(ctx.approvals||"")+" "+String(ctx.notes||""))+"").toLowerCase();
+    var hasApprovalRange = /\$\s?\d{1,3}[,.]?\d{3}|\d+k\b|up to \$?\d|pre.?approved.*\d|approved.*\$\d/.test(approvals);
     var creditStr=cleanCredit(ctx.credit);
     var creditNum=0;
     if(creditStr){var m=String(creditStr).match(/\d{3}/);if(m)creditNum=parseInt(m[0],10);}
@@ -3614,24 +3618,39 @@ function openSMSPicker(ri){
 
     // ============== 0a. STATUS: 01. Lex Approved — Call → soft_approval (HOT) ==============
     // Checked FIRST so "lex approved" wins over bare "approved" matches below.
-    // This is the hottest status in the pipeline — call them NOW. Catches the new
-    // short label plus any legacy "Pre-Approved" / "Schedule Call" variants.
+    // This is the hottest status in the pipeline — call them NOW. Picks the
+    // "with range" template if we have numbers in Approvals/notes; otherwise
+    // the generic schedule-the-call one.
     if(st.indexOf("01.")===0 || st.indexOf("lex approv")!==-1 || st.indexOf("pre-approv")!==-1 || st.indexOf("pre approv")!==-1 || st.indexOf("schedule call")!==-1){
+      // Detect "they want it in writing" pushback in notes
+      if(/send me|send it|offer here|write|email it|wont (call|hop)|not available|busy|cant (call|talk)/i.test(notes)){
+        return {product:"cc",stage:"soft_approval",
+                label:"Pushback — reframe as underwriting walkthrough",
+                templateLabel:"'Just send it over here' pushback",
+                reason:"Notes: lead wants details in writing · reframe as UW walkthrough"};
+      }
       return {product:"cc",stage:"soft_approval",
               label:"Lex approved — schedule the call",
-              reason:"Lex pre-approval in · call them now"};
+              templateLabel: hasApprovalRange ? "Pre-approved w/ range — ask time" : "No range yet — just schedule",
+              reason: hasApprovalRange
+                ? "Lex approval in · you have the $ range · schedule the call"
+                : "Lex approval in · schedule the call (fill in range if you have it)"};
     }
     // ============== 0a2. STATUS: 07. Cold — Had Approval → reengage ==============
-    // Parked lead that previously had an approval (MCA or Lex). The approval's
-    // still on file — if they come back, close them. Smart SMS routes to a
-    // product-aware re-engagement template.
+    // Parked lead that previously had an approval (MCA or Lex). Picks the
+    // "with amount" reengage template when we have numbers on file, otherwise
+    // the "approval still good" one.
     if(st.indexOf("07.")===0 || st.indexOf("cold")!==-1 || st.indexOf("had approval")!==-1){
-      // If tags/notes hint at Lex/credit card history, use the CC reengage
-      // template that references the Lex pre-approval. Otherwise MCA reengage.
       var wasCC = /credit card|credit line|cc\b|0%|lex/i.test(tags) || /lex|pre-approv|pre approv/i.test(notes);
-      return {product: wasCC ? "cc" : "mca", stage:"reengage",
+      var reProd = wasCC ? "cc" : "mca";
+      return {product: reProd, stage:"reengage",
               label:"Re-engage — approval still on file",
-              reason:"Cold with approval on file · worth one more touch"};
+              templateLabel: hasApprovalRange
+                ? (wasCC ? "Approval + range" : "Approval + amount")
+                : (wasCC ? "Lex approval still good" : "Approval still good"),
+              reason: hasApprovalRange
+                ? "Cold w/ specific approval on file · lead with the number"
+                : "Cold w/ approval on file · worth one more touch"};
     }
     // ============== 0b. STATUS: 04. Missing Report → needs_fix templates ==============
     // The specific issue lives in the notes, and the notes-driven section below
@@ -3749,50 +3768,89 @@ function openSMSPicker(ri){
       }
     }
 
-    // ============== 2. STATUS-DRIVEN FALLBACK ==============
+    // ============== 2. STATUS-DRIVEN FALLBACK — with sharp template picks ==============
     if(/decline|garbage|dead/i.test(st)) return null;
+
     var isMcaStage=(st.indexOf("mca")!==-1 && st.indexOf("decline")===-1) ||
                    st.indexOf("00. new")!==-1 || st.indexOf("new")===0;
+
+    // 650+ score on an MCA path → should be pivoted to 0% credit line.
+    // Pick template by score band: 680+ → "650+ score" opener. Any approval-stage
+    // signal in status → "MCA approved but score is better fit for CC".
     if(isMcaStage && creditNum>=650){
+      var pivotTpl = (st.indexOf("02.")===0 || st.indexOf("mca approved")!==-1)
+        ? "MCA approved but score is better fit for CC"
+        : "650+ score — convert to 0% credit line";
       return {product:"mca",stage:"pivot_credit",
               label:"Pivot to 0% credit line",
+              templateLabel: pivotTpl,
               reason:"Score "+creditNum+" qualifies — convert from MCA"};
     }
-    if(st.indexOf("pivot")!==-1 || st.indexOf("03.")!==-1){
+
+    // 03. MCA → CC Pivot (status says pivot but no score signal yet)
+    if(st.indexOf("pivot")!==-1 || st.indexOf("03.")===0){
+      // Credit score we know but < 650 → statements-weak angle. Else ask them.
+      var pivotTpl2;
+      if(creditNum >= 680) pivotTpl2 = "650+ score — convert to 0% credit line";
+      else if(creditNum > 0) pivotTpl2 = "Statements weak, ask score/co-signer";
+      else pivotTpl2 = "They mentioned good score";
       return {product:"mca",stage:"pivot_credit",
               label:"Pivot to 0% credit line",
+              templateLabel: pivotTpl2,
               reason:"Lead is in pivot phase"};
     }
-    if((st.indexOf("02.")!==-1 || st.indexOf("approved")!==-1) &&
+
+    // 02. MCA Approved → send terms. Pick template by whether we have numbers.
+    if((st.indexOf("02.")===0 || (st.indexOf("approved")!==-1 && st.indexOf("mca")!==-1)) &&
        st.indexOf("lex")===-1 && st.indexOf("pre-approv")===-1 && st.indexOf("pre approv")===-1){
+      // If tags include "moving forward" and contracts are the next step,
+      // route to closing stage with contracts prompt.
+      if(/moving forward|in the works|signed|contract|funded/i.test(tags)){
+        return {product:"mca",stage:"closing",
+                label:"Contracts & funding",
+                templateLabel:"Contracts sent (check email)",
+                reason:"Approved + moving forward — contracts stage"};
+      }
       return {product:"mca",stage:"approved",
               label:"Send approval terms",
-              reason:"MCA approved — send terms"};
+              templateLabel: hasApprovalRange ? "Approval + terms (complete)" : "Approval + intro combo",
+              reason: hasApprovalRange
+                ? "MCA approved · fill in the terms and send"
+                : "MCA approved · send the approval opener"};
     }
-    if(st.indexOf("00. new")!==-1 || st===""){
+
+    // 00. New → intro opener. Product chosen from tags.
+    if(st.indexOf("00.")===0 || st==="" || st==="new"){
       return {product:product,stage:"intro",
               label:"Intro: Got the app",
+              templateLabel: product==="cc" ? "Got your credit report" : "Got your app",
               reason:"Fresh lead — opener"};
     }
-    // 04. Missing Report + no notes → generic needs_fix fallback
+
+    // 04. Missing Report + no specific notes → generic needs_fix fallback.
     // (specific notes patterns already caught in section 1 above)
     if(st.indexOf("04.")===0 || st.indexOf("missing report")!==-1 || st.indexOf("needs docs")!==-1){
       return {product:product,stage:"needs_fix",
               label:"Needs Fix / Resend",
               reason:"Missing Report — pick the specific issue in templates"};
     }
-    // 05. MCA Sent → waiting on the bank, check in
+
+    // 05. MCA Sent → waiting on bank. Short checkin.
     if(st.indexOf("05.")===0 || st.indexOf("mca sent")!==-1){
       return {product:"mca",stage:"checkin",
-              label:"Follow-up",
-              reason:"Waiting on bank — check in"};
+              label:"Follow-up — waiting on bank",
+              templateLabel:"Just checking in",
+              reason:"Waiting on bank — gentle check in"};
     }
-    // 06. Sent to Lexington → waiting on partner, check in
+
+    // 06. Sent to Lexington → waiting on partner. Short checkin.
     if(st.indexOf("06.")===0 || st.indexOf("lexington")!==-1){
       return {product:"cc",stage:"checkin",
               label:"Follow-up on Lexington",
-              reason:"In Lexington stage — check in"};
+              templateLabel:"Here when you're ready",
+              reason:"In Lexington stage — gentle check in"};
     }
+
     return null;
   }
   // Expose for smsNav so the suggestion renders at the top of the picker
