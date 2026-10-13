@@ -3441,8 +3441,14 @@ function smsNav(level,key){
     var sugHtml="";
     if(sug && TREE[sug.product] && TREE[sug.product].stages[sug.stage]){
       var sugStage=TREE[sug.product].stages[sug.stage];
+      // If the suggestion knows the exact template, jump straight into it
+      // (no re-finding in the Needs Fix list). Otherwise fall back to the
+      // stage's full template list.
+      var sugClick = sug.templateLabel
+        ? "jumpToSuggestedTemplate('"+sug.product+"','"+sug.stage+"',"+JSON.stringify(sug.templateLabel)+")"
+        : "smsNav('templates','"+sug.product+':'+sug.stage+"')";
       sugHtml=
-        '<button onclick="smsNav(\'templates\',\''+sug.product+':'+sug.stage+'\')" style="width:100%;background:linear-gradient(135deg,rgba(201,162,39,.18),rgba(124,58,237,.14));border:1.5px solid rgba(201,162,39,.5);border-radius:14px;padding:14px 16px;margin-bottom:12px;color:#fff;font-size:14px;font-weight:800;touch-action:manipulation;text-align:left;display:flex;flex-direction:column;gap:4px;box-shadow:0 2px 12px rgba(201,162,39,.12)">'+
+        '<button onclick="'+sugClick+'" style="width:100%;background:linear-gradient(135deg,rgba(201,162,39,.18),rgba(124,58,237,.14));border:1.5px solid rgba(201,162,39,.5);border-radius:14px;padding:14px 16px;margin-bottom:12px;color:#fff;font-size:14px;font-weight:800;touch-action:manipulation;text-align:left;display:flex;flex-direction:column;gap:4px;box-shadow:0 2px 12px rgba(201,162,39,.12)">'+
           '<div style="display:flex;align-items:center;gap:10px;width:100%">'+
             '<span style="font-size:18px">💡</span>'+
             '<span style="font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#c9a227">Suggested</span>'+
@@ -3484,6 +3490,28 @@ function smsNav(level,key){
         '</div>';
       }).join("");
   }
+}
+
+// Jump directly to a specific template inside a stage. Used by the "💡 Suggested"
+// card when it already knows the exact template Sam needs — no reason to drop
+// him into the stage list and make him find it again.
+// Flow: render the templates view, then find the card whose label matches and
+// open it inline (same visual state as if Sam had tapped it).
+function jumpToSuggestedTemplate(product, stage, templateLabel){
+  smsNav('templates', product+':'+stage);
+  // Give the DOM a tick to render, then auto-select the matching template card.
+  setTimeout(function(){
+    var cards = document.querySelectorAll('#sms-template-list .sms-card');
+    for (var i = 0; i < cards.length; i++){
+      var labelDiv = cards[i].querySelector('div[style*="font-weight:800"]');
+      if (labelDiv && labelDiv.textContent.trim() === templateLabel){
+        selectSMSTemplate(cards[i].id, cards[i]);
+        cards[i].scrollIntoView({behavior:'smooth', block:'center'});
+        return;
+      }
+    }
+    // No exact match — leave Sam in the stage list rather than silently failing.
+  }, 30);
 }
 
 function openSMSPicker(ri){
@@ -3640,11 +3668,15 @@ function openSMSPicker(ri){
 
     // ============== 1. NOTES-DRIVEN SUGGESTIONS ==============
     // The notes column often spells out the exact issue. Catch those first.
+    // Each return includes a `templateLabel` that EXACTLY matches the `l` field
+    // of one template in the chosen stage — the suggestion card uses this to
+    // jump straight into the specific template instead of making Sam re-find it.
     if(notes){
       // HTML tri-merge — the common Credit Hero Score / MyScoreIQ export mistake
       if(/html/.test(notes) && /(pdf|tri.?merge|credit report|report)/.test(notes)){
         return {product:"cc",stage:"needs_fix",
                 label:"Tri-merge came as HTML",
+                templateLabel:"Tri-merge as HTML (need PDF)",
                 reason:"Notes mention HTML + credit report"};
       }
       // Sent wrong doc type — bank stmts when CC was the ask
@@ -3652,6 +3684,7 @@ function openSMSPicker(ri){
          (/credit (line|card)|0%|cc\b/.test(notes) || isCC)){
         return {product:"cc",stage:"needs_fix",
                 label:"Sent bank stmts (need credit report)",
+                templateLabel:"Applied w/ bank stmts (need credit report)",
                 reason:"Notes: wrong doc type for credit line"};
       }
       // Sent wrong doc type — credit report when MCA was the ask
@@ -3659,6 +3692,7 @@ function openSMSPicker(ri){
          (/mca|revenue|working capital/.test(notes) || !isCC)){
         return {product:"mca",stage:"needs_fix",
                 label:"Sent credit report (need bank stmts)",
+                templateLabel:"Need bank stmts (sent credit report)",
                 reason:"Notes: wrong doc type for MCA"};
       }
       // Partial / summary tri-merge
@@ -3666,6 +3700,7 @@ function openSMSPicker(ri){
          /(report|tri.?merge|credit)/.test(notes)){
         return {product:"cc",stage:"needs_fix",
                 label:"Tri-merge is summary",
+                templateLabel:"Tri-merge is summary (need full)",
                 reason:"Notes: partial / summary report"};
       }
       // Bank statements as photo / screenshot
@@ -3673,6 +3708,7 @@ function openSMSPicker(ri){
          /statement/.test(notes)){
         return {product:"mca",stage:"needs_fix",
                 label:"Stmts as photo (need PDF)",
+                templateLabel:"Bank stmts as photo (need PDF)",
                 reason:"Notes: statements as photo"};
       }
       // Missing months / pages / statements
@@ -3680,6 +3716,7 @@ function openSMSPicker(ri){
          /(month|statement|page)/.test(notes)){
         return {product:"mca",stage:"needs_fix",
                 label:"Statements missing / need more",
+                templateLabel:"Need more months of statements",
                 reason:"Notes: missing statements"};
       }
       // Need DL / voided check
@@ -3687,12 +3724,14 @@ function openSMSPicker(ri){
          /(dl|license|voided|voided check|id)/.test(notes)){
         return {product:product,stage:"needs_fix",
                 label:"Need DL / voided check",
+                templateLabel: product==="cc" ? "Need DL / voided check" : "Need DL + voided check",
                 reason:"Notes: missing DL / check"};
       }
       // Only one bureau
       if(/(1 bureau|one bureau|single bureau|only.*bureau|experian only|transunion only|equifax only)/.test(notes)){
         return {product:"cc",stage:"needs_fix",
                 label:"Only 1 bureau (need all 3)",
+                templateLabel:"Only 1 bureau (need all 3)",
                 reason:"Notes: single-bureau report"};
       }
       // Generic wrong-file catch-all
@@ -3773,8 +3812,8 @@ function openSMSPicker(ri){
     mca:{label:"Working Capital (MCA)",icon:"💼",stages:{
 
       intro:{label:"Intro: Got the App",icon:"👋",templates:[
-        {l:"Got your app",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+" and am going over it. Nothing needed from you right now, I'll be in touch as soon as I hear back from underwriting."},
-        {l:"Got app, anything to add?",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+". Before I send it to underwriting, is there anything specific about the business you'd like me to include? Projected contracts, what the funds are for, any recent dips in the statements. Context like that helps me get you the strongest terms."},
+        {l:"Got your app",b:"Hi "+first+", this is Sam with "+brand+". I received your application and am going over it. Nothing needed from you right now, I'll be in touch as soon as I hear back from underwriting."},
+        {l:"Got app, anything to add?",b:"Hi "+first+", this is Sam with "+brand+". I received your application. Before I send it to underwriting, is there anything specific about the business you'd like me to include? Projected contracts, what the funds are for, any recent dips in the statements. Context like that helps me get you the strongest terms."},
       ]},
 
       // ─── MCA → CREDIT PIVOT ───────────────────────────────────────────
@@ -3784,18 +3823,18 @@ function openSMSPicker(ri){
       //   B) Statements are weak — ask about score / co-signer as a path
       // ─── SHORT, direct texts in Sam's voice ────────────────────────────
       pivot_credit:{label:"Pivot to Credit Line",icon:"🔁",templates:[
-        {l:"650+ score — convert to 0% credit line",b:"Hi "+first+", this is Sam with "+brand+". Was reviewing your application for "+bizNice+". With your credit in good shape, you'd be much better off on our 0% credit line program than the revenue-based one. 0% intro APR, no daily payments, capital on your own schedule. Want me to send over the credit line application?"},
-        {l:"They mentioned good score",b:"Hi "+first+", this is Sam with "+brand+". Got your application for "+bizNice+". You mentioned good credit, so wanted to flag — we also have a 0% credit line program that'd likely be a better deal (no daily payments, 0% intro APR). If your score is 680+ we can usually get you approved. Want me to send the credit line application?"},
-        {l:"Statements weak, ask score/co-signer",b:"Hi "+first+", this is Sam with "+brand+". Got your application for "+bizNice+". The revenue program isn't the strongest fit for your file right now, but our 0% credit line could work. What's your credit score? If 680+ we can likely get you approved. Co-signer with 680+ also works. Let me know."},
+        {l:"650+ score — convert to 0% credit line",b:"Hi "+first+", this is Sam with "+brand+". Was reviewing your application. With your credit in good shape, you'd be much better off on our 0% credit line program than the revenue-based one. 0% intro APR, no daily payments, capital on your own schedule. Want me to send over the credit line application?"},
+        {l:"They mentioned good score",b:"Hi "+first+", this is Sam with "+brand+". Got your application. You mentioned good credit, so wanted to flag — we also have a 0% credit line program that'd likely be a better deal (no daily payments, 0% intro APR). If your score is 680+ we can usually get you approved. Want me to send the credit line application?"},
+        {l:"Statements weak, ask score/co-signer",b:"Hi "+first+", this is Sam with "+brand+". Got your application. The revenue program isn't the strongest fit for your file right now, but our 0% credit line could work. What's your credit score? If 680+ we can likely get you approved. Co-signer with 680+ also works. Let me know."},
         {l:"MCA approved but score is better fit for CC",b:"Hi "+first+", this is Sam with "+brand+". Good news on the MCA approval. Before you decide — with your credit score, our 0% credit line would be a much better deal (no daily payments, way lower total cost). Want me to pull the credit side so you can see both offers?"},
       ]},
 
       approved:{label:"Approval",icon:"✅",templates:[
         // Hero: complete, factual, all terms + early payoff discount mention
-        {l:"Approval + terms (complete)",b:"Hi "+first+", this is Sam with "+brand+". Good news on your application for "+bizNice+". Here are the approved terms:\n\nAmount: "+amt+"\nTerm: [X] months\nPayment: $[X] [daily/weekly]\nTotal payback: $[X]\n\nIf you're able to pay this off ahead of schedule, you'd be eligible for an early payoff discount so you wouldn't pay the full payback.\n\nLet me know if you'd like to move forward or if you have any questions."},
+        {l:"Approval + terms (complete)",b:"Hi "+first+", this is Sam with "+brand+". Good news on your application. Here are the approved terms:\n\nAmount: "+amt+"\nTerm: [X] months\nPayment: $[X] [daily/weekly]\nTotal payback: $[X]\n\nIf you're able to pay this off ahead of schedule, you'd be eligible for an early payoff discount so you wouldn't pay the full payback.\n\nLet me know if you'd like to move forward or if you have any questions."},
 
         // Same thing but as the first message (approval doubles as intro)
-        {l:"Approval + intro combo",b:"Hi "+first+", this is Sam with "+brand+". I've been reviewing your application for "+bizNice+" and have an approval ready for you:\n\nAmount: "+amt+"\nTerm: [X] months\nPayment: $[X] [daily/weekly]\nTotal payback: $[X]\n\nIf you're able to pay this off ahead of schedule, you'd be eligible for an early payoff discount so you wouldn't pay the full payback.\n\nLet me know if you'd like to move forward or if you have any questions."},
+        {l:"Approval + intro combo",b:"Hi "+first+", this is Sam with "+brand+". I've been reviewing your application and have an approval ready for you:\n\nAmount: "+amt+"\nTerm: [X] months\nPayment: $[X] [daily/weekly]\nTotal payback: $[X]\n\nIf you're able to pay this off ahead of schedule, you'd be eligible for an early payoff discount so you wouldn't pay the full payback.\n\nLet me know if you'd like to move forward or if you have any questions."},
 
         // Gentle follow-up after you've already sent the approval
         {l:"Approval follow-up (no new ask)",b:"Hi "+first+", just following up on the approval I sent over. No rush, whenever you've had a chance to look it over let me know."},
@@ -3822,12 +3861,12 @@ function openSMSPicker(ri){
       // (true from Jotform), then names what underwriting needs and why.
       // ─── SHORT, direct texts in Sam's voice ────────────────────────────
       needs_fix:{label:"Needs Fix / Resend",icon:"⚠️",templates:[
-        {l:"Bank stmts as photo (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". The bank statements for "+bizNice+" came through as photos which underwriting can't process. Download the last 3 months as PDFs from online banking and email to sam@lendiago.com. I'll run the numbers once I have them."},
+        {l:"Bank stmts as photo (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". The bank statements you sent came through as photos which underwriting can't process. Download the last 3 months as PDFs from online banking and email to sam@lendiago.com. I'll run the numbers once I have them."},
         {l:"Need bank stmts (sent credit report)",b:"Hi "+first+", this is Sam with "+brand+". You sent the credit report, but for the revenue-based program we need the last 3 months of business bank statements as PDFs. Download from online banking and email to sam@lendiago.com. I'll review and get you some numbers."},
-        {l:"Need more months of statements",b:"Hi "+first+", this is Sam with "+brand+". To issue an offer for "+bizNice+" we need the last 3 full months of bank statements. Pull the missing ones as PDFs from online banking and email to sam@lendiago.com. I'll review once I have them all."},
+        {l:"Need more months of statements",b:"Hi "+first+", this is Sam with "+brand+". To issue an offer we need the last 3 full months of bank statements. Pull the missing ones as PDFs from online banking and email to sam@lendiago.com. I'll review once I have them all."},
         {l:"Statement missing most recent month",b:"Hi "+first+", this is Sam with "+brand+". The most recent month of bank statements isn't in your file. Grab that one as a PDF from online banking and email to sam@lendiago.com. I'll wrap it up once I have it."},
         {l:"Need DL + voided check",b:"Hi "+first+", this is Sam with "+brand+". To finalize I just need a photo of your driver's license and a voided check. Text here or email sam@lendiago.com, whichever's easier."},
-        {l:"Generic — review found an issue",b:"Hi "+first+", this is Sam with "+brand+". One thing I noticed on your application for "+bizNice+": [specify]. Once that's resolved I'll wrap everything up."},
+        {l:"Generic — review found an issue",b:"Hi "+first+", this is Sam with "+brand+". One thing I noticed on your application: [specify]. Once that's resolved I'll wrap everything up."},
       ]},
 
       checkin:{label:"Follow-Up",icon:"👋",templates:[
@@ -3855,7 +3894,7 @@ function openSMSPicker(ri){
 
       intro:{label:"Intro",icon:"👋",templates:[
         {l:"Got your credit report",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report and reviewing it now. I'll be the rep on your file from here — I'll reach back out as soon as I have an update."},
-        {l:"Got app, need credit next",b:"Hi "+first+", this is Sam with "+brand+". Got your application for "+bizNice+". Next step is pulling your credit so I can see what we can line up — it's a soft pull, won't affect your score. I'll send the link over here."},
+        {l:"Got app, need credit next",b:"Hi "+first+", this is Sam with "+brand+". Got your application. Next step is pulling your credit so I can see what we can line up — it's a soft pull, won't affect your score. I'll send the link over here."},
       ]},
 
       // ─── Sam's actual text voice: short, direct, no 631 stuff ──────────
@@ -3902,15 +3941,15 @@ function openSMSPicker(ri){
       // Like the Mikhail text: "You are pre-approved for up to $X. What time
       // works tomorrow?" No long consultative explanations in texts.
       needs_fix:{label:"Needs Fix / Resend",icon:"⚠️",templates:[
-        {l:"Applied w/ bank stmts (need credit report)",b:"Hi "+first+", this is Sam with "+brand+". Saw your application came in for "+bizNice+" with bank statements. For the 0% credit line program we actually need a tri-merge credit report (all 3 bureaus) as a PDF. Easy option: credithero.com. Once you send it over I'll review and get back to you with options."},
-        {l:"Convert MCA → CC (first touch)",b:"Hi "+first+", this is Sam with "+brand+". Looked over your application for "+bizNice+" and I think our 0% credit line would be a stronger fit than the revenue option. For that we need a tri-merge credit report (all 3 bureaus) as a PDF. Easy option: credithero.com. Once I have it I'll run the numbers for you."},
-        {l:"Tri-merge as HTML (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". The credit report for "+bizNice+" came through as HTML which we can't open. Just need it re-pulled as a PDF. Easy option: credithero.com. I'll review once you send it over."},
+        {l:"Applied w/ bank stmts (need credit report)",b:"Hi "+first+", this is Sam with "+brand+". Saw your application came in with bank statements. For the 0% credit line program we actually need a tri-merge credit report (all 3 bureaus) as a PDF. Easy option: credithero.com. Once you send it over I'll review and get back to you with options."},
+        {l:"Convert MCA → CC (first touch)",b:"Hi "+first+", this is Sam with "+brand+". Looked over your application and I think our 0% credit line would be a stronger fit than the revenue option. For that we need a tri-merge credit report (all 3 bureaus) as a PDF. Easy option: credithero.com. Once I have it I'll run the numbers for you."},
+        {l:"Tri-merge as HTML (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". The credit report you sent came through as HTML which we can't open. Just need it re-pulled as a PDF. Easy option: credithero.com. I'll review once you send it over."},
         {l:"Tri-merge is summary (need full)",b:"Hi "+first+", this is Sam with "+brand+". The credit report that came in is just the summary page. We need the full tri-merge (all 3 bureaus, full history) as a PDF. Easy option: credithero.com for a quick re-pull. I'll review and get back to you once I have it."},
         {l:"Only 1 bureau (need all 3)",b:"Hi "+first+", this is Sam with "+brand+". The report provided is from one bureau only. We need all three (Equifax, Experian, TransUnion) to get a complete snapshot and determine exact numbers for you. Easy option: credithero.com for a tri-merge. Once I have all three I'll review and let you know what options we have."},
         {l:"Report too old (need current)",b:"Hi "+first+", this is Sam with "+brand+". The pull date on the credit report is a few months old — underwriting needs a fresh one. Easy option: credithero.com for a quick tri-merge. I'll review once you send the updated report."},
         {l:"Score screenshot (need full report)",b:"Hi "+first+", this is Sam with "+brand+". The score screenshot works for a ballpark but we need the full tri-merge credit report as a PDF to issue an approval. Easy option: credithero.com. I'll review once you send it over."},
         {l:"Need DL / voided check",b:"Hi "+first+", this is Sam with "+brand+". To finalize I just need a photo of your driver's license and a voided check. Text them here or email sam@lendiago.com, whichever's easier."},
-        {l:"Generic — review found an issue",b:"Hi "+first+", this is Sam with "+brand+". One thing I noticed on your application for "+bizNice+": [specify]. Once that's cleared up I'll wrap everything up on my end."},
+        {l:"Generic — review found an issue",b:"Hi "+first+", this is Sam with "+brand+". One thing I noticed on your application: [specify]. Once that's cleared up I'll wrap everything up on my end."},
       ]},
 
       checkin:{label:"Follow-Up",icon:"🔄",templates:[
