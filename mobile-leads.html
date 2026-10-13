@@ -335,6 +335,7 @@ function onOpen() {
     .addItem("⚙ Set up Transfer checkbox + backfill Lendiago", "setupJotformMirror")
     .addItem("📡 Set up Lexington broadcast", "setupLexingtonBroadcast")
     .addItem("🚀 Do Everything (one-click rollout)", "doEverythingOneClick")
+    .addItem("🔧 Check/install Jotform sync trigger", "verifyAndInstallSyncTrigger")
     .addSeparator()
     .addItem("🎨 Apply Lead Status colors (CF)", "applyLendiagoStatusCF")
     .addItem("🔀 Renumber: migrate to new 12-status pipeline", "renumberToNewPipeline")
@@ -351,6 +352,65 @@ function onOpen() {
     .addSeparator()
     .addItem("🧹 Clear All for Paste (keeps header)", "clearForPaste")
     .addToUi();
+}
+
+// ============================================================================
+// 🔧 VERIFY / INSTALL the 1-minute Jotform sync trigger
+// This is the ONLY thing that makes new Jotform submissions appear in Lendiago
+// automatically. If this trigger doesn't exist, nothing auto-syncs — new leads
+// stay in Jotform and never make it to Lendiago.
+// This function:
+//   1. Lists all current triggers for syncJotformLeads
+//   2. If none exist, installs one that fires every 1 minute
+//   3. Also fires the sync NOW so any pending submissions get processed
+//   4. Opens a dialog with the honest status
+// ============================================================================
+function verifyAndInstallSyncTrigger() {
+  const ui = SpreadsheetApp.getUi();
+
+  // 1. Find existing triggers for this handler
+  const allTriggers = ScriptApp.getProjectTriggers();
+  const syncTriggers = allTriggers.filter(function(t) {
+    return t.getHandlerFunction() === 'syncJotformLeads';
+  });
+
+  let msg = "";
+  let action = "";
+
+  if (syncTriggers.length === 0) {
+    // No trigger exists → install one
+    ScriptApp.newTrigger('syncJotformLeads').timeBased().everyMinutes(1).create();
+    action = "INSTALLED a new 1-minute trigger for syncJotformLeads.";
+    msg = "⚠️  No sync trigger was installed before.\n\n" +
+          "That's why new Jotform submissions weren't auto-appearing in Lendiago.\n\n" +
+          action;
+  } else if (syncTriggers.length === 1) {
+    const trig = syncTriggers[0];
+    const type = trig.getTriggerSource();
+    msg = "✅  Sync trigger is already installed and running.\n\n" +
+          "Handler: syncJotformLeads\n" +
+          "Type: " + String(type) + "\n" +
+          "Trigger ID: " + trig.getUniqueId();
+    action = "No changes made.";
+  } else {
+    // Multiple triggers — delete duplicates and keep one
+    for (let i = 1; i < syncTriggers.length; i++) {
+      ScriptApp.deleteTrigger(syncTriggers[i]);
+    }
+    msg = "⚠️  Found " + syncTriggers.length + " duplicate sync triggers.\n\n" +
+          "Removed " + (syncTriggers.length - 1) + " duplicates. One trigger kept running every 1 minute.";
+    action = "Cleaned up duplicates.";
+  }
+
+  // Fire the sync once right now to pick up any pending rows
+  try {
+    syncJotformLeads();
+    msg += "\n\nAlso fired the sync right now — any Jotform submissions sitting pending have been processed.";
+  } catch (e) {
+    msg += "\n\n⚠️  Immediate sync fire failed: " + e.message;
+  }
+
+  ui.alert("Jotform Sync Trigger — Status", msg, ui.ButtonSet.OK);
 }
 
 // ============================================================================
