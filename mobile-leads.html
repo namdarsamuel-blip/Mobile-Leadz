@@ -3747,15 +3747,12 @@ function openSMSPicker(ri){
       // credit line instead. Two scenarios covered:
       //   A) Their app mentioned good credit — just reference it and offer
       //   B) Statements are weak — ask about score / co-signer as a path
+      // ─── SHORT, direct texts in Sam's voice ────────────────────────────
       pivot_credit:{label:"Pivot to Credit Line",icon:"🔁",templates:[
-        // THE ONE — any MCA applicant with 650+ should hear this. Lead with
-        // the value prop (0%, no daily payments, their own schedule), not with
-        // the sales pitch. The suggestion engine (see smartSMSSuggestion) will
-        // surface this template at the top of the picker whenever credit≥650.
-        {l:"650+ score — convert to 0% intro credit line",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+" and want to flag something before we go down the revenue-based path. With your credit in the 650+ range, you'd be much better off on our 0% introductory business credit line program instead. The upside: 0% intro APR, no daily payments pulling out of your account, and you'd have access to the capital on your own schedule. Approval is based on your credit (tri-merge) rather than monthly revenue, so the numbers come out stronger for you. Want me to send over the credit line application?"},
-        {l:"They mentioned good score",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+". You mentioned your credit is in good shape, so I wanted to flag something. In addition to the revenue program, we also have a 0% business credit line program that would likely be a better deal for you: no daily payments, 0% intro APR, and you'd have access to the capital on your own schedule. If your score is 680+, we can likely get you approved. Want me to send over the credit line application?"},
-        {l:"Statements won't fit, ask about score/co-signer",b:"Hi "+first+", this is Sam with "+brand+". I received your application for "+bizNice+". The revenue-based program isn't the strongest fit for your file right now, but there's a 0% business credit line program that could work well. What's your credit score currently? If it's 680+ we can likely get you approved. If not, a co-signer with 680+ credit works as a path too. Let me know and I'll send over the credit line application."},
-        {l:"MCA approved but score is better fit for CC",b:"Hi "+first+", this is Sam with "+brand+". Good news on the MCA approval, but before you decide — looking at your credit score, I think the 0% introductory credit line would actually be a much better deal for you. No daily payments, 0% intro APR, and the total cost ends up a fraction of the MCA. Want me to pull the credit side so you can see both offers before choosing?"},
+        {l:"650+ score — convert to 0% credit line",b:"Hi "+first+", this is Sam with "+brand+". Was reviewing your application for "+bizNice+". With your credit in good shape, you'd be much better off on our 0% credit line program than the revenue-based one. 0% intro APR, no daily payments, capital on your own schedule. Want me to send over the credit line application?"},
+        {l:"They mentioned good score",b:"Hi "+first+", this is Sam with "+brand+". Got your application for "+bizNice+". You mentioned good credit, so wanted to flag — we also have a 0% credit line program that'd likely be a better deal (no daily payments, 0% intro APR). If your score is 680+ we can usually get you approved. Want me to send the credit line application?"},
+        {l:"Statements weak, ask score/co-signer",b:"Hi "+first+", this is Sam with "+brand+". Got your application for "+bizNice+". The revenue program isn't the strongest fit for your file right now, but our 0% credit line could work. What's your credit score? If 680+ we can likely get you approved. Co-signer with 680+ also works. Let me know."},
+        {l:"MCA approved but score is better fit for CC",b:"Hi "+first+", this is Sam with "+brand+". Good news on the MCA approval. Before you decide — with your credit score, our 0% credit line would be a much better deal (no daily payments, way lower total cost). Want me to pull the credit side so you can see both offers?"},
       ]},
 
       approved:{label:"Approval",icon:"✅",templates:[
@@ -3788,16 +3785,14 @@ function openSMSPicker(ri){
       // specifically what's wrong, and asks for the fix emailed to Sam.
       // All first-touch friendly — opens with "thanks for completing the application"
       // (true from Jotform), then names what underwriting needs and why.
-      // ─── Sam's voice: first-touch needs_fix templates ──────────────────
-      // Same pattern as CC needs_fix: review, specific observation, explain
-      // WHY, give agency, close with Sam's next action.
+      // ─── SHORT, direct texts in Sam's voice ────────────────────────────
       needs_fix:{label:"Needs Fix / Resend",icon:"⚠️",templates:[
-        {l:"Bank stmts as photo (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". The bank statements came through as photos, which underwriting can't process. If you can log into your bank and download the last 3 months as PDFs, that'll let us run the full numbers. Takes about a minute per statement. Email them to sam@lendiago.com whenever you've got them and I'll review everything and let you know what options we have."},
-        {l:"Need bank stmts (sent credit report)",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". You sent over the credit report, but for the revenue-based program, underwriting needs the last 3 months of business bank statements as PDFs so we can see the real revenue picture and determine exact funding numbers for you. If you can log into your bank and download them, email them to sam@lendiago.com and I'll review everything from there."},
-        {l:"Need more months of statements",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". To issue an offer, underwriting needs the last 3 full months of bank statements so we can get a complete revenue picture. You can pull the missing ones as PDFs from online banking and email to sam@lendiago.com. Once I have them all, I'll review and let you know what options we have."},
-        {l:"Statement missing most recent month",b:"Hi "+first+", this is Sam with "+brand+". I was going over your application for "+bizNice+" and noticed the most recent month of bank statements isn't in there. If you can grab that one as a PDF from online banking and email to sam@lendiago.com, I'll finalize the review and get back to you with options."},
-        {l:"Need DL + voided check",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". To finalize everything I'll need a clear photo of your driver's license and a voided check. You can text them to this number or email to sam@lendiago.com, whichever's easier. Once I have those, I'll wrap things up on my end."},
-        {l:"Generic — review found an issue",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+" and want to flag one thing before we finalize: [specify]. Once that's resolved, I'll review everything and let you know what options we have."},
+        {l:"Bank stmts as photo (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". The bank statements for "+bizNice+" came through as photos which underwriting can't process. Download the last 3 months as PDFs from online banking and email to sam@lendiago.com. I'll run the numbers once I have them."},
+        {l:"Need bank stmts (sent credit report)",b:"Hi "+first+", this is Sam with "+brand+". You sent the credit report, but for the revenue-based program we need the last 3 months of business bank statements as PDFs. Download from online banking and email to sam@lendiago.com. I'll review and get you some numbers."},
+        {l:"Need more months of statements",b:"Hi "+first+", this is Sam with "+brand+". To issue an offer for "+bizNice+" we need the last 3 full months of bank statements. Pull the missing ones as PDFs from online banking and email to sam@lendiago.com. I'll review once I have them all."},
+        {l:"Statement missing most recent month",b:"Hi "+first+", this is Sam with "+brand+". The most recent month of bank statements isn't in your file. Grab that one as a PDF from online banking and email to sam@lendiago.com. I'll wrap it up once I have it."},
+        {l:"Need DL + voided check",b:"Hi "+first+", this is Sam with "+brand+". To finalize I just need a photo of your driver's license and a voided check. Text here or email sam@lendiago.com, whichever's easier."},
+        {l:"Generic — review found an issue",b:"Hi "+first+", this is Sam with "+brand+". One thing I noticed on your application for "+bizNice+": [specify]. Once that's resolved I'll wrap everything up."},
       ]},
 
       checkin:{label:"Follow-Up",icon:"👋",templates:[
@@ -3813,23 +3808,27 @@ function openSMSPicker(ri){
     cc:{label:"0% Business Credit",icon:"💳",stages:{
 
       intro:{label:"Intro",icon:"👋",templates:[
-        // Credit report in — natural phrasing, flags the call-later step without asking for time yet
-        {l:"Got your credit report",b:"Hi "+first+", this is Sam with "+brand+". I received your credit report and am going over it with our bank team. I'll be the rep on your file from here. If approved, our bank team will set up a brief call to go over the program terms with you. I'll be in touch as soon as I hear back."},
-
-        // Simple "app in, credit next" (when there's no pivot context, just a straight CC applicant)
-        {l:"Got app, need credit next",b:"Hi "+first+", this is Sam with "+brand+". I received your application. Next step is pulling your credit so our team can see what we can line up. It's a soft pull, won't affect your score. I'll send the link over here."},
+        {l:"Got your credit report",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report and reviewing it now. I'll be the rep on your file from here — I'll reach back out as soon as I have an update."},
+        {l:"Got app, need credit next",b:"Hi "+first+", this is Sam with "+brand+". Got your application for "+bizNice+". Next step is pulling your credit so I can see what we can line up — it's a soft pull, won't affect your score. I'll send the link over here."},
       ]},
 
-      soft_approval:{label:"Soft Approval: Schedule",icon:"✅",templates:[
-        {l:"Pick a time (3 options)",b:"Hi "+first+", soft approval is in. Our bank team needs a brief call to finalize. They'll be calling from a 631 area code. Does today at 3 PM, tomorrow at 11 AM, or tomorrow at 2 PM work best?"},
-        {l:"Open window",b:"Hi "+first+", soft approval is in. Our bank team needs a brief call to finalize. They'll be calling from a 631 area code. What time works for you today or tomorrow?"},
-        {l:"ASAP",b:"Hi "+first+", your approval just came through. Our bank team is available now if you'd like to finalize right away. They'll be calling from a 631 area code. Available?"},
+      // ─── Sam's actual text voice: short, direct, no 631 stuff ──────────
+      // Modeled on the real text he sent Mikhail:
+      //   "You are pre-approved for up to $30,000–$50,000. What time works
+      //    best for you tomorrow to schedule a quick call to go over everything?"
+      // No "this is Sam with Lendiago" opener (lead's already in the thread).
+      // No "our bank team / 631 area code" (he removed that).
+      soft_approval:{label:"Pre-Approved: Schedule Call",icon:"✅",templates:[
+        {l:"Pre-approved w/ range — ask time",b:"Hi "+first+", you're pre-approved for up to $[X]–$[Y]. What time works best for you tomorrow to schedule a quick call to go over everything?"},
+        {l:"Pre-approved — today or tomorrow",b:"Hi "+first+", you're pre-approved for up to $[X]–$[Y]. When works for you today or tomorrow to hop on a quick call?"},
+        {l:"Pre-approved — available now",b:"Hi "+first+", you're pre-approved for up to $[X]–$[Y]. I'm available now if you want to jump on a quick call and go over everything."},
+        {l:"No range yet — just schedule",b:"Hi "+first+", soft approval is in. What time works best for you tomorrow to schedule a quick call to go over the program?"},
       ]},
 
       call_scheduled:{label:"Call Confirmed / Reminder",icon:"📞",templates:[
-        {l:"Confirm time",b:"Hi "+first+", confirmed. Our bank team will call you at [TIME] from a 631 area code. Please answer when you see it come through."},
-        {l:"15-min heads up",b:"Hi "+first+", quick heads up. Our bank team will be calling you in about 15 minutes from a 631 area code."},
-        {l:"Missed, reschedule",b:"Hi "+first+", our bank team tried to reach you but didn't get through. When would be a better time? I'll have them try again."},
+        {l:"Confirm time",b:"Hi "+first+", confirmed for [TIME]. Talk then."},
+        {l:"15-min heads up",b:"Hi "+first+", heads up — calling in about 15 minutes."},
+        {l:"Missed, reschedule",b:"Hi "+first+", tried calling but didn't catch you. When works better? Happy to reschedule."},
       ]},
 
       // ─── FILE / DOC ISSUE — resend request ────────────────────────────
@@ -3843,32 +3842,20 @@ function openSMSPicker(ri){
       // [bizNice]" (accurate — they DID complete an application via Jotform), then
       // explains what underwriting needs and why. No "thanks for sending those
       // over" phrasing — that implies ongoing conversation.
-      // ─── Sam's voice: first-touch needs_fix templates ──────────────────
-      // Opens with "I was reviewing your application and noticed X."
-      // Explains the WHY (approval criteria, complete snapshot, exact numbers).
-      // Gives agency ("any method you prefer").
-      // Offers Credit Hero Score as the easy path.
-      // Closes with Sam's next action ("I'll review and let you know what options we have").
-      // No "thanks for sending" fluff. No em-dashes.
+      // ─── SHORT, direct texts in Sam's voice ────────────────────────────
+      // Pattern: state the situation → tell them the next step → I handle my part.
+      // Like the Mikhail text: "You are pre-approved for up to $X. What time
+      // works tomorrow?" No long consultative explanations in texts.
       needs_fix:{label:"Needs Fix / Resend",icon:"⚠️",templates:[
-        // THE DAVID L WEST SCENARIO — applied with bank stmts for CC path
-        {l:"Applied w/ bank stmts (need credit report)",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". You sent bank statements, but for the 0% credit line program, underwriting needs a tri-merge credit report from all 3 bureaus (Equifax, Experian, TransUnion) as a PDF so we can get a complete snapshot and determine exact funding numbers for you. You can pull it any way you prefer. If you need an easy option, you can generate a tri-merge at credithero.com. Once you send it over, I'll review everything and let you know what options we have."},
-        // MCA → CC pivot (first touch)
-        {l:"Convert MCA → CC (first touch)",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+" and I think our 0% introductory credit line program would be a stronger fit for you than the revenue-based option. 0% intro APR, no daily payments, access to the capital on your own schedule. To underwrite that program we'll need a tri-merge credit report (all 3 bureaus) as a PDF. You can pull one any way you prefer. If you need an easy option: credithero.com. Once you send it over, I'll review and let you know what options we have available."},
-        // Classic HTML tri-merge (Maria scenario)
-        {l:"Tri-merge as HTML (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". I was going over your application for "+bizNice+". The tri-merge credit report came through as an HTML file and underwriting can't open those. Could you re-pull it and save it as a PDF this time? You can use any provider you prefer, or credithero.com if you want an easy option. Once you resend, I'll review everything and get back to you with options."},
-        // Partial / summary report
-        {l:"Tri-merge is summary (need full)",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". The credit report included is just the summary page, but underwriting needs the full tri-merge (all 3 bureaus, all accounts, full history) as a PDF so we can get a complete snapshot. You can re-pull it any way you prefer, or use credithero.com for an easy tri-merge. Once I have the full report, I'll review and let you know what options we have."},
-        // Only 1 bureau (the Shay scenario — your real email)
-        {l:"Only 1 bureau (need all 3)",b:"Hi "+first+", this is Sam with "+brand+". Based on the report provided, your score is in a decent range and the other two bureaus should be similar or higher. Since you're right on the border of our approval criteria, it's worth sending over the remaining two so we can get a complete snapshot and determine exact funding numbers for you. You can pull the reports any way you prefer as long as we receive all three (Equifax, Experian, TransUnion). If you need an easy option, you can generate a tri-merge at credithero.com. Once you send those over, I'll review everything and let you know what options we have available."},
-        // Stale report
-        {l:"Report too old (need current)",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". The pull date on the credit report is a few months old, so underwriting needs a fresh one to work from accurate numbers. You can re-pull any way you prefer, or use credithero.com for a quick tri-merge. Once you send the updated report, I'll review and let you know what options we have."},
-        // Screenshot instead of full report
-        {l:"Score screenshot (need full report)",b:"Hi "+first+", this is Sam with "+brand+". I was going over your application for "+bizNice+". The score screenshot is helpful for a ballpark but underwriting needs the full tri-merge credit report as a PDF to issue an approval and determine exact numbers for you. You can pull it any way you prefer, or use credithero.com for an easy tri-merge. Once you send it over, I'll review everything and let you know what options we have."},
-        // DL / voided check
-        {l:"Need DL / voided check",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+". To move forward I'll need a clear photo of your driver's license and a voided check. You can text them to this number or email to sam@lendiago.com, whichever's easier. Once I have those, I'll finalize everything on my end."},
-        // Generic fallback
-        {l:"Generic — review found an issue",b:"Hi "+first+", this is Sam with "+brand+". I was reviewing your application for "+bizNice+" and want to flag one thing before we can finalize: [specify]. Once that's cleared up, I'll review everything and let you know what options we have."},
+        {l:"Applied w/ bank stmts (need credit report)",b:"Hi "+first+", this is Sam with "+brand+". Saw your application came in for "+bizNice+" with bank statements. For the 0% credit line program we actually need a tri-merge credit report (all 3 bureaus) as a PDF. Easy option: credithero.com. Once you send it over I'll review and get back to you with options."},
+        {l:"Convert MCA → CC (first touch)",b:"Hi "+first+", this is Sam with "+brand+". Looked over your application for "+bizNice+" and I think our 0% credit line would be a stronger fit than the revenue option. For that we need a tri-merge credit report (all 3 bureaus) as a PDF. Easy option: credithero.com. Once I have it I'll run the numbers for you."},
+        {l:"Tri-merge as HTML (need PDF)",b:"Hi "+first+", this is Sam with "+brand+". The credit report for "+bizNice+" came through as HTML which we can't open. Just need it re-pulled as a PDF. Easy option: credithero.com. I'll review once you send it over."},
+        {l:"Tri-merge is summary (need full)",b:"Hi "+first+", this is Sam with "+brand+". The credit report that came in is just the summary page. We need the full tri-merge (all 3 bureaus, full history) as a PDF. Easy option: credithero.com for a quick re-pull. I'll review and get back to you once I have it."},
+        {l:"Only 1 bureau (need all 3)",b:"Hi "+first+", this is Sam with "+brand+". The report provided is from one bureau only. We need all three (Equifax, Experian, TransUnion) to get a complete snapshot and determine exact numbers for you. Easy option: credithero.com for a tri-merge. Once I have all three I'll review and let you know what options we have."},
+        {l:"Report too old (need current)",b:"Hi "+first+", this is Sam with "+brand+". The pull date on the credit report is a few months old — underwriting needs a fresh one. Easy option: credithero.com for a quick tri-merge. I'll review once you send the updated report."},
+        {l:"Score screenshot (need full report)",b:"Hi "+first+", this is Sam with "+brand+". The score screenshot works for a ballpark but we need the full tri-merge credit report as a PDF to issue an approval. Easy option: credithero.com. I'll review once you send it over."},
+        {l:"Need DL / voided check",b:"Hi "+first+", this is Sam with "+brand+". To finalize I just need a photo of your driver's license and a voided check. Text them here or email sam@lendiago.com, whichever's easier."},
+        {l:"Generic — review found an issue",b:"Hi "+first+", this is Sam with "+brand+". One thing I noticed on your application for "+bizNice+": [specify]. Once that's cleared up I'll wrap everything up on my end."},
       ]},
 
       checkin:{label:"Follow-Up",icon:"🔄",templates:[
