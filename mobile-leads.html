@@ -3869,6 +3869,15 @@ function openSMSPicker(ri){
         {l:"Pre-approved — today or tomorrow",b:"Hi "+first+", you're pre-approved for up to $[X]–$[Y]. When works for you today or tomorrow to hop on a quick call?"},
         {l:"Pre-approved — available now",b:"Hi "+first+", you're pre-approved for up to $[X]–$[Y]. I'm available now if you want to jump on a quick call and go over everything."},
         {l:"No range yet — just schedule",b:"Hi "+first+", soft approval is in. What time works best for you tomorrow to schedule a quick call to go over the program?"},
+        // Pushback handler: lead asks for the offer in writing instead of a call.
+        // Modeled on Sam's actual response to Mikhail: reframes the call as the
+        // underwriting team walking through the offer in detail, not a sales pitch.
+        {l:"'Just send it over here' pushback",b:"Hi "+first+", we need to schedule a call with the underwriting team so they can go over the offer with you in detail and explain the entire process. What time works best for you today?"},
+        // Urgency pin-down: Sam's "I just checked with the team" pattern — shows
+        // he's actively advocating + manufactures scarcity + still gives a tomorrow
+        // fallback. Very effective for leads sitting on a schedule-the-call status.
+        {l:"Checked w/ team — one slot today",b:"Hi "+first+", I just checked with the team — only available time today is [TIME] EST. If that works for you, I'll get you scheduled. Otherwise, what time tomorrow works best?"},
+        {l:"Shorter — pin down a time",b:"Hi "+first+", need to lock a time with the underwriting team. Does [TIME] today work? If not, what time tomorrow is best?"},
       ]},
 
       call_scheduled:{label:"Call Confirmed / Reminder",icon:"📞",templates:[
