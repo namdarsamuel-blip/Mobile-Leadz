@@ -655,7 +655,7 @@ function closeStatusPicker(){$("status-ov").classList.remove("open");_spIdx=null
 // in play, not from presets. Add more here only when the mobile picker
 // really needs a specific tag that isn't on any lead yet.
 // "📎 Needs Docs" is now a Lead Status (column F), not a tag. See statusStyle
-// and smartSMSSuggestion_ for how 05. Needs Docs is handled.
+// and smartSMSSuggestion_ for how 04. Missing Report is handled.
 const PRESET_TAGS = [
   "🔥 Moving Forward"    // active deal — either working on approval or approved + client moving to sign/fund
 ];
@@ -2176,56 +2176,65 @@ function startTick(){
 function statusStyle(ls){
   if(!ls)return null;const l=ls.toLowerCase();
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // CURRENT 8-STATUS SET — mobile palette mirrors the Google Sheet CF palette
+  // CURRENT 10-STATUS SET — mobile palette mirrors the Google Sheet CF palette
   // applied via MobileLeads menu → 🎨 Apply Lead Status colors (CF).
   // Sheet uses pale pastels for black text; mobile uses the SAME HUES translated
   // to dark-mode-friendly accent colors (brighter chip text on a translucent fill).
   //
-  //   Status                        Sheet pastel      Mobile accent
-  //   ──────────────────────────── ───────────────── ─────────────────
-  //   00. New                     manila  #f6e8c7   warm cream #f6e8c7
-  //   01. MCA Sent                peach   #fbd4b1   orange     #fb923c
-  //   02. MCA Approved            green   #cfeab8   green      #34d399
-  //   03. MCA → CC Pivot          blue    #b7d8f1   blue       #60a5fa
-  //   04. Needs Docs              blue    #b7d8f1   blue       #60a5fa (same as 03)
-  //   05. Sent to Lexington       lavender#e2d4f0   violet     #c4b5fd
-  //   100/110/120 Declined/Garbage red     #f3bebe   red        #f87171
+  //   Status                             Sheet pastel      Mobile accent
+  //   ─────────────────────────────── ───────────────── ─────────────────
+  //   00. New                           manila  #f6e8c7   warm cream #f6e8c7
+  //   01. Lex Pre-Approved — Call       green   #cfeab8   green      #34d399 (HOT)
+  //   02. MCA Approved                  green   #cfeab8   green      #34d399
+  //   03. MCA → CC Pivot                blue    #b7d8f1   blue       #60a5fa
+  //   04. Missing Report                blue    #b7d8f1   blue       #60a5fa (same as 03)
+  //   05. MCA Sent                      peach   #fbd4b1   orange     #fb923c
+  //   06. Sent to Lexington             lavender#e2d4f0   violet     #c4b5fd
+  //   100/110/120 Declined/Garbage      red     #f3bebe   red        #f87171
   //
   // Match by number prefix first (most reliable), then by keyword fallback so a
   // typo'd status still looks right. Decline check comes BEFORE Lexington so
-  // "Lexington Declined" lands on red, not lavender.
+  // "Lexington Declined" lands on red, not lavender. Lex Pre-Approved is checked
+  // BEFORE bare "approved" so "pre-approved" wins over "approved" matching.
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // Declines/garbage FIRST so "Lexington Declined" doesn't catch the Lexington rule
   if(l.indexOf("100.")===0||l.indexOf("110.")===0||l.indexOf("120.")===0||
      l.indexOf("declin")!==-1||l.indexOf("garbage")!==-1||l.indexOf("dead")!==-1)
     return{bg:"rgba(248,113,113,.13)",border:"rgba(248,113,113,.45)",color:"#f87171"};   // red
 
-  if(l.indexOf("00.")===0||l.indexOf("00. new")!==-1||l==="new")
+  // 00. New — manila
+  if(l.indexOf("00.")===0||l==="new")
     return{bg:"rgba(246,232,199,.14)",border:"rgba(246,232,199,.5)",color:"#f6e8c7"};    // manila
 
-  if(l.indexOf("01.")===0||l.indexOf("mca sent")!==-1)
-    return{bg:"rgba(249,115,22,.13)",border:"rgba(249,115,22,.45)",color:"#fb923c"};     // orange
+  // 01. Lex Pre-Approved — green (HOT, call NOW). Checked BEFORE bare "approved".
+  if(l.indexOf("01.")===0||l.indexOf("pre-approv")!==-1||l.indexOf("pre approv")!==-1||l.indexOf("schedule call")!==-1)
+    return{bg:"rgba(52,211,153,.13)",border:"rgba(52,211,153,.45)",color:"#34d399"};     // green — call NOW
 
+  // 02. MCA Approved — green
   if(l.indexOf("02.")===0||l.indexOf("approv")!==-1)
     return{bg:"rgba(52,211,153,.13)",border:"rgba(52,211,153,.45)",color:"#34d399"};     // green
 
-  // 03 Pivot and 04 Missing Report share BLUE — both "client applied, we need correct docs"
+  // 03. MCA → CC Pivot — blue
   if(l.indexOf("03.")===0||l.indexOf("pivot")!==-1||l.indexOf("→ cc")!==-1||l.indexOf("to cc")!==-1)
     return{bg:"rgba(96,165,250,.13)",border:"rgba(96,165,250,.45)",color:"#60a5fa"};     // blue
 
+  // 04. Missing Report — blue (same hue as pivot, both are "action needed from us")
   if(l.indexOf("04.")===0||l.indexOf("missing report")!==-1||l.indexOf("needs docs")!==-1||l.indexOf("wrong doc")!==-1||l.indexOf("wrong file")!==-1||l.indexOf("wrong format")!==-1)
-    return{bg:"rgba(96,165,250,.13)",border:"rgba(96,165,250,.45)",color:"#60a5fa"};     // blue (same as 03)
+    return{bg:"rgba(96,165,250,.13)",border:"rgba(96,165,250,.45)",color:"#60a5fa"};     // blue
 
-  // 06 Lex Pre-Approved checked BEFORE 05 Lexington so the longer status wins.
-  if(l.indexOf("06.")===0||l.indexOf("pre-approv")!==-1||l.indexOf("pre approv")!==-1||l.indexOf("schedule call")!==-1)
-    return{bg:"rgba(52,211,153,.13)",border:"rgba(52,211,153,.45)",color:"#34d399"};     // green — Lex approval = win
+  // 05. MCA Sent — peach (waiting on the bank)
+  if(l.indexOf("05.")===0||l.indexOf("mca sent")!==-1)
+    return{bg:"rgba(249,115,22,.13)",border:"rgba(249,115,22,.45)",color:"#fb923c"};     // peach / orange
 
-  if(l.indexOf("05.")===0||l.indexOf("lexington")!==-1)
+  // 06. Sent to Lexington — lavender (waiting on partner)
+  if(l.indexOf("06.")===0||l.indexOf("lexington")!==-1)
     return{bg:"rgba(167,139,250,.15)",border:"rgba(167,139,250,.5)",color:"#c4b5fd"};    // lavender
 
   // ━━━ LEGACY STATUSES ━━━
   // Kept so any lingering old-status rows (pre-rewrite) still get a reasonable
   // color on mobile instead of generic gray. New status work should go in the
-  // 8-status block above.
+  // 10-status block above.
   if(l.includes("final"))        return{bg:"rgba(167,139,250,.15)",border:"rgba(167,139,250,.5)",color:"#c4b5fd"};
   if(l.includes("beat"))         return{bg:"rgba(234,67,53,.13)",border:"rgba(234,67,53,.45)",color:"#f87171"};
   if(l.includes("app sent"))     return{bg:"rgba(59,130,246,.13)",border:"rgba(59,130,246,.45)",color:"#60a5fa"};
@@ -3567,16 +3576,18 @@ function openSMSPicker(ri){
                st.indexOf("pivot")!==-1 || st.indexOf("lexington")!==-1;
     var product = isCC ? "cc" : "mca";
 
-    // ============== 0a. STATUS: 04. Missing Report → needs_fix templates ==============
-    // Highest priority — the specific issue lives in the notes, and the notes-driven
-    // section below picks the right template (HTML, bank stmts, summary, etc.).
-    // If notes don't match any specific pattern, we fall through to needs_fix generic.
-    // 06. Lex Pre-Approved checked FIRST so "pre-approved" wins over bare "approved".
-    if(st.indexOf("06.")===0 || st.indexOf("pre-approv")!==-1 || st.indexOf("pre approv")!==-1 || st.indexOf("schedule call")!==-1){
+    // ============== 0a. STATUS: 01. Lex Pre-Approved → soft_approval (HOT) ==============
+    // Checked FIRST so "pre-approved" wins over bare "approved" matches below.
+    // This is the hottest status in the pipeline — call them NOW.
+    if(st.indexOf("01.")===0 || st.indexOf("pre-approv")!==-1 || st.indexOf("pre approv")!==-1 || st.indexOf("schedule call")!==-1){
       return {product:"cc",stage:"soft_approval",
               label:"Pre-approved — schedule the call",
-              reason:"Lexington pre-approval in · time to lock the bank team call"};
+              reason:"Lexington pre-approval in · call them now"};
     }
+    // ============== 0b. STATUS: 04. Missing Report → needs_fix templates ==============
+    // The specific issue lives in the notes, and the notes-driven section below
+    // picks the right template (HTML, bank stmts, summary, etc.). If notes don't
+    // match any specific pattern, we fall through to needs_fix generic.
     if(st.indexOf("04.")===0 || st.indexOf("missing report")!==-1 || st.indexOf("needs docs")!==-1){
       // The specific needs_fix template is picked by the NOTES logic below (section 1).
       // If notes are empty or don't match a pattern, we fall through to a generic
@@ -3585,13 +3596,13 @@ function openSMSPicker(ri){
       // the specific case first; if nothing matches, section 2 catches it with
       // generic "Needs Fix / Resend".)
     }
-    // ============== 0b. TAG-DRIVEN: 🔥 Moving Forward ==============
+    // ============== 0c. TAG-DRIVEN: 🔥 Moving Forward ==============
     // Active MCA deal in motion. Routes depending on where we are in the pipeline:
-    //   - Not yet approved (00/01) → check in on underwriting
+    //   - Awaiting bank (05)       → check in on underwriting
     //   - Already approved (02)    → closing stage (contracts/verification/fund)
     //   - Pivot phase (03)         → pivot_credit templates
     if(/moving forward|in the works|in progress/i.test(tags)){
-      if(st.indexOf("02.")!==-1 || st.indexOf("approv")!==-1){
+      if(st.indexOf("02.")!==-1 || (st.indexOf("approv")!==-1 && st.indexOf("pre-approv")===-1 && st.indexOf("pre approv")===-1)){
         return {product:"mca",stage:"closing",
                 label:"Move to signing & funding",
                 reason:"Approved + moving forward — close it out"};
@@ -3692,7 +3703,8 @@ function openSMSPicker(ri){
               label:"Pivot to 0% credit line",
               reason:"Lead is in pivot phase"};
     }
-    if((st.indexOf("02.")!==-1 || st.indexOf("approved")!==-1) && st.indexOf("lex")===-1){
+    if((st.indexOf("02.")!==-1 || st.indexOf("approved")!==-1) &&
+       st.indexOf("lex")===-1 && st.indexOf("pre-approv")===-1 && st.indexOf("pre approv")===-1){
       return {product:"mca",stage:"approved",
               label:"Send approval terms",
               reason:"MCA approved — send terms"};
@@ -3702,11 +3714,6 @@ function openSMSPicker(ri){
               label:"Intro: Got the app",
               reason:"Fresh lead — opener"};
     }
-    if(st.indexOf("01.")!==-1 || st.indexOf("mca sent")!==-1){
-      return {product:"mca",stage:"checkin",
-              label:"Follow-up",
-              reason:"Waiting on bank — check in"};
-    }
     // 04. Missing Report + no notes → generic needs_fix fallback
     // (specific notes patterns already caught in section 1 above)
     if(st.indexOf("04.")===0 || st.indexOf("missing report")!==-1 || st.indexOf("needs docs")!==-1){
@@ -3714,7 +3721,14 @@ function openSMSPicker(ri){
               label:"Needs Fix / Resend",
               reason:"Missing Report — pick the specific issue in templates"};
     }
-    if(st.indexOf("05.")===0 || st.indexOf("lexington")!==-1){
+    // 05. MCA Sent → waiting on the bank, check in
+    if(st.indexOf("05.")===0 || st.indexOf("mca sent")!==-1){
+      return {product:"mca",stage:"checkin",
+              label:"Follow-up",
+              reason:"Waiting on bank — check in"};
+    }
+    // 06. Sent to Lexington → waiting on partner, check in
+    if(st.indexOf("06.")===0 || st.indexOf("lexington")!==-1){
       return {product:"cc",stage:"checkin",
               label:"Follow-up on Lexington",
               reason:"In Lexington stage — check in"};
