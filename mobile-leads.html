@@ -3982,6 +3982,11 @@ function openSMSPicker(ri){
         {l:"Thanks for sending — reviewing now",b:"Hi "+first+", thank you for sending this over. I'm reviewing your report now and will get back to you shortly with the options we have available for you."},
         {l:"Specialist reviewed, likes it — schedule call",b:"Hi "+first+", our specialist reviewed your report and likes what they see. They'd like to schedule a quick call with you to discuss the options. Do you have any availability later today or tomorrow? Also, what's the best phone number to reach you at?"},
         {l:"Specialist likes it — short + urgency",b:"Hi "+first+", our specialist reviewed your report and likes what they see. Let's lock in a quick call to go over the options — any availability today or tomorrow?"},
+        // ─── Approval ready — general, no $ range needed ─────────────────
+        // Sam's note: "lets just be general — specialist wants to go over
+        // file, approval ready already." Avoids committing to specific $
+        // values but still lands the "there's a win here, let's talk."
+        {l:"Approval ready — schedule call (full)",b:"Hi "+first+", thank you for sending your report over. Our specialist reviewed it and it looks like we have an approval ready for you. They'd like to schedule a quick call to go over everything. Do you have any availability later today or tomorrow? Also, what's the best phone number to reach you at?"},
         {l:"Got your credit report",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report and reviewing it now. I'll be the rep on your file from here — I'll reach back out as soon as I have an update."},
         // ─── Got report → set up specialist call (bridge intro → soft_approval) ───
         // For when the report is in and Sam wants to move straight to a scheduled
@@ -4025,6 +4030,15 @@ function openSMSPicker(ri){
         // approval is still good so it doesn't feel like starting over.
         {l:"Ghosted — where are we on the call?",b:"Hi "+first+", where are we on the call? Pre-approval's still good — just need to lock a time."},
         {l:"Still want to move forward?",b:"Hi "+first+", haven't heard back. Still want to lock in the call? If not I'll close out the file on my end."},
+        // ─── General "approval ready" flow — no $ range, specialist framing ───
+        // Companion to the "Approval ready — schedule call (full)" intro. Use
+        // these for the 2nd+ touches so the "specialist + approval ready"
+        // framing carries through the whole sequence.
+        {l:"Good news — specialist finalized, approval ready",b:"Hi "+first+", quick update — specialist finalized the review and we have an approval ready to go. Just need to set up a quick call to walk you through everything. What time today or tomorrow works best?"},
+        {l:"Good news — short version",b:"Hi "+first+", good news — specialist finished the review, approval is ready. Let's lock in that call — what time today or tomorrow works best?"},
+        {l:"Specialist still ready — soft nudge",b:"Hi "+first+", circling back on the call — specialist is still ready to go and the approval is still open on our end. What time this week works for you?"},
+        {l:"Specialist waiting — direct nudge",b:"Hi "+first+", specialist is waiting on you to lock in the call. Approval's still good. What time today or tomorrow is best?"},
+        {l:"Last call — approval still open",b:"Hi "+first+", haven't heard back on scheduling. Approval's still open — just need to lock in the call. If this still works for you let me know a time, otherwise I'll close out the file on my end."},
       ]},
 
       call_scheduled:{label:"Call Confirmed / Reminder",icon:"📞",templates:[
