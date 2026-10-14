@@ -1114,11 +1114,13 @@ function cleanCredit(raw){
   // Range format: "670–739 (Good)" or "670-739" → take first number
   const m=s.match(/^(\d{3,})\s*[-–—]/);
   if(m) return m[1];
-  // Pure number → return as-is
-  if(/^\d{3,}$/.test(s)) return s;
-  // Non-numeric (e.g. "I don't know") → hide
-  if(!/\d/.test(s)) return "";
-  return s;
+  // Anything else with a 3-digit number: "800+ (Exceptional)", "740+",
+  // "800 something", etc. → take ONLY the first 3-digit number (strip
+  // "+", "(Exceptional)", or any other decoration).
+  const n=s.match(/\d{3,}/);
+  if(n) return n[0];
+  // No digits at all (e.g. "I don't know") → hide
+  return "";
 }
 function fmtSSN(s){if(!s)return"";const d=String(s).replace(/\D/g,"");if(d.length===9)return`${d.slice(0,3)}-${d.slice(3,5)}-${d.slice(5)}`;return s;}
 function fmtEIN(s){if(!s)return"";const d=String(s).replace(/\D/g,"");if(d.length===9)return`${d.slice(0,2)}-${d.slice(2)}`;return s;}
@@ -3884,6 +3886,13 @@ function openSMSPicker(ri){
       intro:{label:"Intro: Got the App",icon:"👋",templates:[
         {l:"Got your app",b:"Hi "+first+", this is Sam with "+brand+". I received your application and am going over it. Nothing needed from you right now, I'll be in touch as soon as I hear back from underwriting."},
         {l:"Got app, anything to add?",b:"Hi "+first+", this is Sam with "+brand+". I received your application. Before I send it to underwriting, is there anything specific about the business you'd like me to include? Projected contracts, what the funds are for, any recent dips in the statements. Context like that helps me get you the strongest terms."},
+        // ─── Dual-track intro: process MCA + flag the 0% credit line ───────
+        // Sam's note: acknowledge the MCA app, say we'll submit, but surface
+        // the 0% credit line program as a potentially better fit. Keeps the
+        // MCA path moving while planting the CC pivot seed.
+        {l:"Got app — reviewing + flag 0% option",b:"Hi "+first+", this is Sam with "+brand+". Got your application for the revenue-based program. I'm reviewing it now and will get you submitted for that. Quick heads up though — if your credit is in good shape, our 0% credit line program might actually be a better fit (0% intro APR, no daily payments, capital on your own schedule). Let me know your credit score and I can run both options for you."},
+        {l:"Got app — short, mentions both programs",b:"Hi "+first+", this is Sam with "+brand+". Got your application — reviewing now and will submit you for the revenue program. Also wanted to flag our 0% credit line (0% intro APR, no daily payments) which might be a better fit if your credit's solid. Lmk your score and I can show you both options."},
+        {l:"Got app — ask credit score for 0% option",b:"Hi "+first+", this is Sam with "+brand+". Got your application for the revenue program. One quick question before I submit — what's your credit score? If it's 680+ you'd likely be much better off on our 0% credit line program (0% intro APR, no daily payments). Just want to make sure I'm getting you into the best fit."},
       ]},
 
       // ─── MCA → CREDIT PIVOT ───────────────────────────────────────────
