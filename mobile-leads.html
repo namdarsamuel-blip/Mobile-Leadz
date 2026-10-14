@@ -3930,6 +3930,14 @@ function openSMSPicker(ri){
       checkin:{label:"Follow-Up",icon:"👋",templates:[
         {l:"Just checking in",b:"Hi "+first+", just checking in on your file. Whenever you have a moment, let me know how you'd like to proceed."},
         {l:"Here when you're ready",b:"Hi "+first+", no pressure on my end. Keeping your file open. Just reply here whenever you'd like to pick it back up."},
+        // ─── Ghosted / no response — "lets work" energy, no cheesy "just following up" ───
+        // These are for when a lead went quiet. Direct, human, no apology for texting
+        // again. Modeled on how Sam actually talks: present tense, specific question,
+        // decisive "if/otherwise" structure.
+        {l:"Still want to move on this?",b:"Hi "+first+", still want to move on this? Let me know and I'll pick it back up."},
+        {l:"Where are we on this?",b:"Hi "+first+", where are we on this? Let me know what you're thinking."},
+        {l:"Haven't heard back — close or keep going?",b:"Hi "+first+", haven't heard back from you. Still want to move forward on this? If not I'll close out the file on my end."},
+        {l:"One-liner — you still good?",b:"Hi "+first+", you still good to move on this?"},
       ]},
 
       // ─── RE-ENGAGE — had an MCA approval, went cold ───────────────────
@@ -3975,6 +3983,11 @@ function openSMSPicker(ri){
         // fallback. Very effective for leads sitting on a schedule-the-call status.
         {l:"Checked w/ team — one slot today",b:"Hi "+first+", I just checked with the team — only available time today is [TIME] EST. If that works for you, I'll get you scheduled. Otherwise, what time tomorrow works best?"},
         {l:"Shorter — pin down a time",b:"Hi "+first+", need to lock a time with the underwriting team. Does [TIME] today work? If not, what time tomorrow is best?"},
+        // ─── Ghosted after pre-approval — direct, no "just following up" ───
+        // Lead got the pre-approval message and went quiet. These acknowledge the
+        // approval is still good so it doesn't feel like starting over.
+        {l:"Ghosted — where are we on the call?",b:"Hi "+first+", where are we on the call? Pre-approval's still good — just need to lock a time."},
+        {l:"Still want to move forward?",b:"Hi "+first+", haven't heard back. Still want to lock in the call? If not I'll close out the file on my end."},
       ]},
 
       call_scheduled:{label:"Call Confirmed / Reminder",icon:"📞",templates:[
@@ -4013,6 +4026,12 @@ function openSMSPicker(ri){
       checkin:{label:"Follow-Up",icon:"🔄",templates:[
         {l:"Checking on report",b:"Hi "+first+", following up. Were you able to pull your credit report?"},
         {l:"Here when you're ready",b:"Hi "+first+", 0% window is still open on our end. Reply here whenever you'd like to pick it back up."},
+        // ─── Ghosted / no response — Sam-voice, no "just following up" ───
+        {l:"Still want to move on this?",b:"Hi "+first+", still want to move on this? Let me know and I'll pick it back up."},
+        {l:"Where are we on this?",b:"Hi "+first+", where are we on this? Let me know what you're thinking."},
+        {l:"Credit report still coming?",b:"Hi "+first+", still planning to send over the credit report? Once I have it I'll get the numbers running for you."},
+        {l:"Haven't heard back — close or keep going?",b:"Hi "+first+", haven't heard back from you. Still want to move forward on this? If not I'll close out the file on my end."},
+        {l:"One-liner — you still good?",b:"Hi "+first+", you still good to move on this?"},
       ]},
 
       // ─── RE-ENGAGE — had a Lex pre-approval, went cold ────────────────
