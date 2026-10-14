@@ -3444,8 +3444,11 @@ function smsNav(level,key){
       // If the suggestion knows the exact template, jump straight into it
       // (no re-finding in the Needs Fix list). Otherwise fall back to the
       // stage's full template list.
+      // HTML-escape the double quotes so the onclick attribute doesn't close
+      // early. (The old bug: JSON.stringify wrapped the label in " and that
+      // closed the onclick=" attribute, breaking the click entirely.)
       var sugClick = sug.templateLabel
-        ? "jumpToSuggestedTemplate('"+sug.product+"','"+sug.stage+"',"+JSON.stringify(sug.templateLabel)+")"
+        ? "jumpToSuggestedTemplate('"+sug.product+"','"+sug.stage+"',"+JSON.stringify(sug.templateLabel).replace(/"/g,"&quot;")+")"
         : "smsNav('templates','"+sug.product+':'+sug.stage+"')";
       sugHtml=
         '<button onclick="'+sugClick+'" style="width:100%;background:linear-gradient(135deg,rgba(201,162,39,.18),rgba(124,58,237,.14));border:1.5px solid rgba(201,162,39,.5);border-radius:14px;padding:14px 16px;margin-bottom:12px;color:#fff;font-size:14px;font-weight:800;touch-action:manipulation;text-align:left;display:flex;flex-direction:column;gap:4px;box-shadow:0 2px 12px rgba(201,162,39,.12)">'+
@@ -3968,6 +3971,14 @@ function openSMSPicker(ri){
         {l:"Got report — book call w/ specialist (tomorrow)",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report — I'm working through it now. Want to lock in a quick call with one of our specialists to go over what we can line up for you. What time works best tomorrow?"},
         {l:"Got report — book call w/ specialist (today or tomorrow)",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report and reviewing it on my end. Let's set up a quick call with one of our specialists to go over what we can do. What time works best today or tomorrow?"},
         {l:"Got report — short, available now",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report, reviewing now. I'm available for a quick call with our specialist if you want to jump on and go over what we can line up."},
+        // ─── Approval ready → book call (first-touch, strongest open) ───
+        // Lead comes in with the credit line application + report, and there's
+        // already an approval on the file. Lead with the win so they engage.
+        // Modeled on Sam's instruction: "Hi Sam Lendiago got you completed
+        // credit line application. I reviewed and we want to work... schedule call."
+        {l:"Approval ready — book call (tomorrow)",b:"Hi "+first+", this is Sam with "+brand+". Got your completed credit line application. Reviewed it on my end — we have an approval ready and want to work with you. Let's schedule a quick call to go over everything. What time works best tomorrow?"},
+        {l:"Approval ready — book call (today or tomorrow)",b:"Hi "+first+", this is Sam with "+brand+". Got your credit line application. Reviewed it and have an approval ready for you — want to lock in a quick call to go over everything. What time works best today or tomorrow?"},
+        {l:"Approval ready — short, available now",b:"Hi "+first+", this is Sam with "+brand+". Credit line application reviewed, approval is ready. Want to jump on a quick call to go over everything? I'm available now if that works."},
       ]},
 
       // ─── Sam's actual text voice: short, direct, no 631 stuff ──────────
@@ -4050,6 +4061,35 @@ function openSMSPicker(ri){
         {l:"Approval + range",b:"Hi "+first+", you were pre-approved for up to $[X]–$[Y]. That's still good on our end — want to lock in a quick call?"},
         {l:"Last check-in",b:"Hi "+first+", haven't heard back in a bit. Pre-approval's still good if you want to schedule the call. Otherwise I'll close out the file."},
         {l:"Soft nudge",b:"Hi "+first+", circling back one more time. Approval's still on file — just reply here if you want to pick it up."},
+      ]},
+
+      // ─── POST-CALL → contracts / next steps ───────────────────────────
+      // After the specialist/underwriting call. Confirms what was discussed
+      // and sets the next action (contracts, verification, cards).
+      post_call:{label:"Post-Call: Next Steps",icon:"✍️",templates:[
+        {l:"Great call — contracts incoming",b:"Hi "+first+", great talking just now. Sending the contracts to your email in the next few minutes. Review, sign, and text me once it's done so I can confirm on my end."},
+        {l:"Great call — program recap",b:"Hi "+first+", great call. Quick recap: approved for $[X] on the 0% credit line program, [X] months intro APR, no daily payments. Next step is contracts — sending now."},
+        {l:"Credit line app link",b:"Hi "+first+", here's the credit line application link we talked about: [LINK]. Takes ~5 min. Once it's in I'll push it through and we'll get the approval set in stone."},
+        {l:"Missed call — reschedule",b:"Hi "+first+", tried calling but didn't catch you. When works better? Happy to reschedule — just let me know a time."},
+      ]},
+
+      // ─── CARDS SHIPPED / PICK-UP ──────────────────────────────────────
+      // After contracts are signed. Tracks the physical card arrival and
+      // activation. Modeled on the William Clinton flow (truist cards came in).
+      cards_shipped:{label:"Cards: Shipping & Activation",icon:"📦",templates:[
+        {l:"Cards shipped — ETA 5-7 days",b:"Hi "+first+", cards are on the way. Should hit your mailbox in 5-7 business days. Text me once they land so we can activate and run the first charge."},
+        {l:"Cards arrived — pick up",b:"Hi "+first+", the cards came in. Pick them up when you get a chance and lmk once you have them so we can activate."},
+        {l:"Confirm cards arrived",b:"Hi "+first+", checking in — did the cards arrive yet? Want to make sure nothing got held up at the issuer."},
+        {l:"Ready to activate",b:"Hi "+first+", ready to activate the cards whenever you're set. Takes about 2 minutes on the phone — what time works today?"},
+      ]},
+
+      // ─── PAYMENT / PROGRAM FEE ────────────────────────────────────────
+      // Payment due on the credit line program itself. Short and direct.
+      // Modeled on Sam's actual pattern ("Calling tmr for payment").
+      payment_due:{label:"Payment Due",icon:"💰",templates:[
+        {l:"Calling tomorrow for payment",b:"Hi "+first+", calling tomorrow to take care of the payment on the card program. What time works best?"},
+        {l:"Payment ping — soft",b:"Hi "+first+", heads up — payment on the program is coming due. Lmk a good time to run it through."},
+        {l:"Payment confirmed — thanks",b:"Hi "+first+", payment went through — all set on my end. I'll keep you posted as the next cards come in."},
       ]},
     }},
   };
