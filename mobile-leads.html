@@ -3974,6 +3974,14 @@ function openSMSPicker(ri){
     cc:{label:"0% Business Credit",icon:"💳",stages:{
 
       intro:{label:"Intro",icon:"👋",templates:[
+        // ─── Sam's actual two-beat flow (modeled on the Derek thread) ───
+        // Beat 1: short acknowledgment, "reviewing now, will get back shortly"
+        // Beat 2: "specialist reviewed and likes what they see" → schedule call
+        // The social-proof framing ("likes what they see") makes the lead lean
+        // in before the schedule ask lands.
+        {l:"Thanks for sending — reviewing now",b:"Hi "+first+", thank you for sending this over. I'm reviewing your report now and will get back to you shortly with the options we have available for you."},
+        {l:"Specialist reviewed, likes it — schedule call",b:"Hi "+first+", our specialist reviewed your report and likes what they see. They'd like to schedule a quick call with you to discuss the options. Do you have any availability later today or tomorrow? Also, what's the best phone number to reach you at?"},
+        {l:"Specialist likes it — short + urgency",b:"Hi "+first+", our specialist reviewed your report and likes what they see. Let's lock in a quick call to go over the options — any availability today or tomorrow?"},
         {l:"Got your credit report",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report and reviewing it now. I'll be the rep on your file from here — I'll reach back out as soon as I have an update."},
         // ─── Got report → set up specialist call (bridge intro → soft_approval) ───
         // For when the report is in and Sam wants to move straight to a scheduled
