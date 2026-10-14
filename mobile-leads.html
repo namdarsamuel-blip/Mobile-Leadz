@@ -3767,6 +3767,13 @@ function openSMSPicker(ri){
                 templateLabel:"Only 1 bureau (need all 3)",
                 reason:"Notes: single-bureau report"};
       }
+      // Report missing credit limits — need "View All" version
+      if(/(limit|limits|view all|all pages|missing.*limit)/.test(notes) && /(report|credit)/.test(notes)){
+        return {product:"cc",stage:"needs_fix",
+                label:"Report missing credit limits",
+                templateLabel:"Report missing limits — need View All (post-schedule)",
+                reason:"Notes: report missing credit limits · need View All"};
+      }
       // Generic wrong-file catch-all
       if(/(wrong|incorrect|bad|invalid).*(file|format|type|doc)/.test(notes) ||
          /resend|re-send|re send/.test(notes)){
@@ -4079,6 +4086,13 @@ function openSMSPicker(ri){
         {l:"Only 1 bureau (need all 3)",b:"Hi "+first+", this is Sam with "+brand+". The report provided is from one bureau only. We need all three (Equifax, Experian, TransUnion) to get a complete snapshot and determine exact numbers for you. Easy option: creditheroscore.com for a tri-merge. Once I have all three I'll review and let you know what options we have."},
         {l:"Report too old (need current)",b:"Hi "+first+", this is Sam with "+brand+". The pull date on the credit report is a few months old — underwriting needs a fresh one. Easy option: creditheroscore.com for a quick tri-merge. I'll review once you send the updated report."},
         {l:"Score screenshot (need full report)",b:"Hi "+first+", this is Sam with "+brand+". The score screenshot works for a ballpark but we need the full tri-merge credit report as a PDF to issue an approval. Easy option: creditheroscore.com. I'll review once you send it over."},
+        // ─── NEW: Report missing credit limits — need "View All" version ───
+        // Based on Sam's real Derek thread. Lead sent report BUT it didn't
+        // show credit limits. Underwriting needs new report with "View All"
+        // clicked so all pages come through. Keeps the schedule-call context
+        // alive since this often fires AFTER the lead has already agreed.
+        {l:"Report missing limits — need View All (post-schedule)",b:"Hi "+first+", thank you for providing your availability and direct line. Before we set up the call, our underwriting team reviewed the file and noted that we need a new credit report, as the current report does not show your credit limits. When generating the report, please make sure to click 'View All' and send all pages from the generated PDF so we have the full details."},
+        {l:"Report missing limits — need View All (short)",b:"Hi "+first+", quick thing before we schedule — underwriting needs a new report because the current one doesn't show your credit limits. Click 'View All' when you generate it and send all pages. Then we'll lock in the call."},
         {l:"Need DL / voided check",b:"Hi "+first+", this is Sam with "+brand+". To finalize I just need a photo of your driver's license and a voided check. Text them here or email sam@lendiago.com, whichever's easier."},
         {l:"Generic — review found an issue",b:"Hi "+first+", this is Sam with "+brand+". One thing I noticed on your application: [specify]. Once that's cleared up I'll wrap everything up on my end."},
       ]},
