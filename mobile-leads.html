@@ -3961,6 +3961,13 @@ function openSMSPicker(ri){
       intro:{label:"Intro",icon:"👋",templates:[
         {l:"Got your credit report",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report and reviewing it now. I'll be the rep on your file from here — I'll reach back out as soon as I have an update."},
         {l:"Got app, need credit next",b:"Hi "+first+", this is Sam with "+brand+". Got your application. Next step is pulling your credit so I can see what we can line up — it's a soft pull, won't affect your score. I'll send the link over here."},
+        // ─── Got report → set up specialist call (bridge intro → soft_approval) ───
+        // For when the report is in and Sam wants to move straight to a scheduled
+        // call with the specialist, rather than wait for a formal pre-approval.
+        // Keeps "working on it" framing but adds the ask for availability.
+        {l:"Got report — book call w/ specialist (tomorrow)",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report — I'm working through it now. Want to lock in a quick call with one of our specialists to go over what we can line up for you. What time works best tomorrow?"},
+        {l:"Got report — book call w/ specialist (today or tomorrow)",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report and reviewing it on my end. Let's set up a quick call with one of our specialists to go over what we can do. What time works best today or tomorrow?"},
+        {l:"Got report — short, available now",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report, reviewing now. I'm available for a quick call with our specialist if you want to jump on and go over what we can line up."},
       ]},
 
       // ─── Sam's actual text voice: short, direct, no 631 stuff ──────────
