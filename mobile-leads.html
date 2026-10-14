@@ -2215,6 +2215,13 @@ function statusStyle(ls){
   if(l.indexOf("01.")===0||l.indexOf("lex approv")!==-1||l.indexOf("pre-approv")!==-1||l.indexOf("pre approv")!==-1||l.indexOf("schedule call")!==-1)
     return{bg:"rgba(52,211,153,.13)",border:"rgba(52,211,153,.45)",color:"#34d399"};     // green — call NOW
 
+  // 07. Cold — Had Approval — slate gray (parked). CHECKED BEFORE 02 MCA Approved
+  // because "Had Approval" contains "approv" and would wrongly match the green rule.
+  // Deliberately muted so it visually recedes vs the active pipeline above, but
+  // doesn't look like a decline. Clear signal: "warm history, cold now."
+  if(l.indexOf("07.")===0||l.indexOf("cold")!==-1||l.indexOf("had approval")!==-1)
+    return{bg:"rgba(148,163,184,.14)",border:"rgba(148,163,184,.4)",color:"#94a3b8"};    // slate gray
+
   // 02. MCA Approved — green
   if(l.indexOf("02.")===0||l.indexOf("approv")!==-1)
     return{bg:"rgba(52,211,153,.13)",border:"rgba(52,211,153,.45)",color:"#34d399"};     // green
@@ -2234,12 +2241,6 @@ function statusStyle(ls){
   // 06. Sent to Lexington — lavender (waiting on partner)
   if(l.indexOf("06.")===0||l.indexOf("lexington")!==-1)
     return{bg:"rgba(167,139,250,.15)",border:"rgba(167,139,250,.5)",color:"#c4b5fd"};    // lavender
-
-  // 07. Cold — Had Approval — slate gray (parked: approval on file if they come back)
-  // Deliberately muted so it visually recedes vs the active pipeline above, but
-  // doesn't look like a decline. Clear signal: "warm history, cold now."
-  if(l.indexOf("07.")===0||l.indexOf("cold")!==-1||l.indexOf("had approval")!==-1)
-    return{bg:"rgba(148,163,184,.14)",border:"rgba(148,163,184,.4)",color:"#94a3b8"};    // slate gray
 
   // ━━━ LEGACY STATUSES ━━━
   // Kept so any lingering old-status rows (pre-rewrite) still get a reasonable
@@ -3892,14 +3893,8 @@ function openSMSPicker(ri){
 
       intro:{label:"Intro: Got the App",icon:"👋",templates:[
         {l:"Got your app",b:"Hi "+first+", this is Sam with "+brand+". I received your application and am going over it. Nothing needed from you right now, I'll be in touch as soon as I hear back from underwriting."},
-        {l:"Got app, anything to add?",b:"Hi "+first+", this is Sam with "+brand+". I received your application. Before I send it to underwriting, is there anything specific about the business you'd like me to include? Projected contracts, what the funds are for, any recent dips in the statements. Context like that helps me get you the strongest terms."},
-        // ─── Dual-track intro: process MCA + flag the 0% credit line ───────
-        // Sam's note: acknowledge the MCA app, say we'll submit, but surface
-        // the 0% credit line program as a potentially better fit. Keeps the
-        // MCA path moving while planting the CC pivot seed.
-        {l:"Got app — reviewing + flag 0% option",b:"Hi "+first+", this is Sam with "+brand+". Got your application for the revenue-based program. I'm reviewing it now and will get you submitted for that. Quick heads up though — if your credit is in good shape, our 0% credit line program might actually be a better fit (0% intro APR, no daily payments, capital on your own schedule). Let me know your credit score and I can run both options for you."},
-        {l:"Got app — short, mentions both programs",b:"Hi "+first+", this is Sam with "+brand+". Got your application — reviewing now and will submit you for the revenue program. Also wanted to flag our 0% credit line (0% intro APR, no daily payments) which might be a better fit if your credit's solid. Lmk your score and I can show you both options."},
-        {l:"Got app — ask credit score for 0% option",b:"Hi "+first+", this is Sam with "+brand+". Got your application for the revenue program. One quick question before I submit — what's your credit score? If it's 680+ you'd likely be much better off on our 0% credit line program (0% intro APR, no daily payments). Just want to make sure I'm getting you into the best fit."},
+        {l:"Got app — flag 0% credit line option",b:"Hi "+first+", this is Sam with "+brand+". Got your application for the revenue-based program. I'm reviewing it now and will get you submitted for that. Quick heads up though — if your credit is in good shape, our 0% credit line program might actually be a better fit (0% intro APR, no daily payments, capital on your own schedule). Let me know your credit score and I can run both options for you."},
+        {l:"Got app — ask credit score first",b:"Hi "+first+", this is Sam with "+brand+". Got your application for the revenue program. One quick question before I submit — what's your credit score? If it's 680+ you'd likely be much better off on our 0% credit line program (0% intro APR, no daily payments). Just want to make sure I'm getting you into the best fit."},
       ]},
 
       // ─── MCA → CREDIT PIVOT ───────────────────────────────────────────
@@ -3909,11 +3904,9 @@ function openSMSPicker(ri){
       //   B) Statements are weak — ask about score / co-signer as a path
       // ─── SHORT, direct texts in Sam's voice ────────────────────────────
       pivot_credit:{label:"Pivot to Credit Line",icon:"🔁",templates:[
-        // ─── Pivot templates ask for the CREDIT REPORT, not the credit line
-        // app. The flow is: see credit report → review → send to Lexington →
-        // get approval → schedule call. Can't skip to the application.
-        {l:"650+ score — need credit report to pivot",b:"Hi "+first+", this is Sam with "+brand+". Was reviewing your application. With your credit in good shape, you'd be much better off on our 0% credit line program than the revenue-based one. 0% intro APR, no daily payments, capital on your own schedule. We need to see your credit report to lock in exact terms — easy option: creditheroscore.com. Once I have it I'll run the numbers for you."},
-        {l:"They mentioned good score — need report",b:"Hi "+first+", this is Sam with "+brand+". Got your application. You mentioned good credit, so wanted to flag — we also have a 0% credit line program that'd likely be a better deal (no daily payments, 0% intro APR). We'd need to see your credit report to confirm. Easy option: creditheroscore.com. Send it over and I'll review."},
+        // Pivot templates ask for the CREDIT REPORT (via creditheroscore.com)
+        // so Sam can review and submit to Lexington.
+        {l:"Good credit — need report to pivot",b:"Hi "+first+", this is Sam with "+brand+". Was reviewing your application. With your credit in good shape, you'd be much better off on our 0% credit line program than the revenue-based one. 0% intro APR, no daily payments, capital on your own schedule. We need to see your credit report to lock in exact terms — easy option: creditheroscore.com. Once I have it I'll run the numbers for you."},
         {l:"Statements weak, ask score/co-signer",b:"Hi "+first+", this is Sam with "+brand+". Got your application. The revenue program isn't the strongest fit for your file right now, but our 0% credit line could work. What's your credit score? If 680+ we can likely get you approved — just need to see a tri-merge credit report (creditheroscore.com is easy). Co-signer with 680+ also works. Let me know."},
         {l:"MCA approved but credit may be better fit",b:"Hi "+first+", this is Sam with "+brand+". Good news on the MCA approval. Before you decide — with the credit you mentioned, our 0% credit line would be a much better deal (no daily payments, way lower total cost). We'd need to see your credit report to confirm — easy pull via creditheroscore.com. Once I review I can show you both offers side by side."},
       ]},
@@ -3960,15 +3953,8 @@ function openSMSPicker(ri){
 
       checkin:{label:"Follow-Up",icon:"👋",templates:[
         {l:"Just checking in",b:"Hi "+first+", just checking in on your file. Whenever you have a moment, let me know how you'd like to proceed."},
-        {l:"Here when you're ready",b:"Hi "+first+", no pressure on my end. Keeping your file open. Just reply here whenever you'd like to pick it back up."},
-        // ─── Ghosted / no response — "lets work" energy, no cheesy "just following up" ───
-        // These are for when a lead went quiet. Direct, human, no apology for texting
-        // again. Modeled on how Sam actually talks: present tense, specific question,
-        // decisive "if/otherwise" structure.
         {l:"Still want to move on this?",b:"Hi "+first+", still want to move on this? Let me know and I'll pick it back up."},
-        {l:"Where are we on this?",b:"Hi "+first+", where are we on this? Let me know what you're thinking."},
         {l:"Haven't heard back — close or keep going?",b:"Hi "+first+", haven't heard back from you. Still want to move forward on this? If not I'll close out the file on my end."},
-        {l:"One-liner — you still good?",b:"Hi "+first+", you still good to move on this?"},
       ]},
 
       // ─── RE-ENGAGE — had an MCA approval, went cold ───────────────────
@@ -3977,7 +3963,6 @@ function openSMSPicker(ri){
       // Short, direct, Sam-voice (lead is already in the thread).
       reengage:{label:"Re-engage — Approval on File",icon:"🔁",templates:[
         {l:"Approval still good",b:"Hi "+first+", your approval is still on file. Want to pick back up?"},
-        {l:"Approval + amount",b:"Hi "+first+", you were approved for $[X]. That's still good on our end — lmk if you want to move forward."},
         {l:"Last check-in",b:"Hi "+first+", haven't heard back in a bit. Approval's still good if you want to lock it in. Otherwise I'll close out the file."},
         {l:"Soft nudge",b:"Hi "+first+", circling back one more time. Approval's still on file — happy to move forward whenever you are."},
       ]},
@@ -3990,35 +3975,14 @@ function openSMSPicker(ri){
     cc:{label:"0% Business Credit",icon:"💳",stages:{
 
       intro:{label:"Intro",icon:"👋",templates:[
-        // ─── Sam's actual two-beat flow (modeled on the Derek thread) ───
-        // Beat 1: short acknowledgment, "reviewing now, will get back shortly"
-        // Beat 2: "specialist reviewed and likes what they see" → schedule call
-        // The social-proof framing ("likes what they see") makes the lead lean
-        // in before the schedule ask lands.
+        // ─── 3 best templates covering the main flow ─────────────────────
+        // 1. Beat 1 acknowledgment (short "got it, reviewing")
+        // 2. Beat 2 full version — specialist reviewed + schedule call
+        //    (modeled on Sam's Derek thread, strongest open with social proof)
+        // 3. Approval ready — leads with the win for strongest first touch
         {l:"Thanks for sending — reviewing now",b:"Hi "+first+", thank you for sending this over. I'm reviewing your report now and will get back to you shortly with the options we have available for you."},
         {l:"Specialist reviewed, likes it — schedule call",b:"Hi "+first+", our specialist reviewed your report and likes what they see. They'd like to schedule a quick call with you to discuss the options. Do you have any availability later today or tomorrow? Also, what's the best phone number to reach you at?"},
-        {l:"Specialist likes it — short + urgency",b:"Hi "+first+", our specialist reviewed your report and likes what they see. Let's lock in a quick call to go over the options — any availability today or tomorrow?"},
-        // ─── Approval ready — general, no $ range needed ─────────────────
-        // Sam's note: "lets just be general — specialist wants to go over
-        // file, approval ready already." Avoids committing to specific $
-        // values but still lands the "there's a win here, let's talk."
-        {l:"Approval ready — schedule call (full)",b:"Hi "+first+", thank you for sending your report over. Our specialist reviewed it and it looks like we have an approval ready for you. They'd like to schedule a quick call to go over everything. Do you have any availability later today or tomorrow? Also, what's the best phone number to reach you at?"},
-        {l:"Got your credit report",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report and reviewing it now. I'll be the rep on your file from here — I'll reach back out as soon as I have an update."},
-        // ─── Got report → set up specialist call (bridge intro → soft_approval) ───
-        // For when the report is in and Sam wants to move straight to a scheduled
-        // call with the specialist, rather than wait for a formal pre-approval.
-        // Keeps "working on it" framing but adds the ask for availability.
-        {l:"Got report — book call w/ specialist (tomorrow)",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report — I'm working through it now. Want to lock in a quick call with one of our specialists to go over what we can line up for you. What time works best tomorrow?"},
-        {l:"Got report — book call w/ specialist (today or tomorrow)",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report and reviewing it on my end. Let's set up a quick call with one of our specialists to go over what we can do. What time works best today or tomorrow?"},
-        {l:"Got report — short, available now",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report, reviewing now. I'm available for a quick call with our specialist if you want to jump on and go over what we can line up."},
-        // ─── Approval ready → book call (first-touch, strongest open) ───
-        // Lead comes in with the credit line application + report, and there's
-        // already an approval on the file. Lead with the win so they engage.
-        // Modeled on Sam's instruction: "Hi Sam Lendiago got you completed
-        // credit line application. I reviewed and we want to work... schedule call."
-        {l:"Approval ready — book call (tomorrow)",b:"Hi "+first+", this is Sam with "+brand+". Got your completed credit line application. Reviewed it on my end — we have an approval ready and want to work with you. Let's schedule a quick call to go over everything. What time works best tomorrow?"},
-        {l:"Approval ready — book call (today or tomorrow)",b:"Hi "+first+", this is Sam with "+brand+". Got your credit line application. Reviewed it and have an approval ready for you — want to lock in a quick call to go over everything. What time works best today or tomorrow?"},
-        {l:"Approval ready — short, available now",b:"Hi "+first+", this is Sam with "+brand+". Credit line application reviewed, approval is ready. Want to jump on a quick call to go over everything? I'm available now if that works."},
+        {l:"Approval ready — schedule call",b:"Hi "+first+", thank you for sending your report over. Our specialist reviewed it and it looks like we have an approval ready for you. They'd like to schedule a quick call to go over everything. Do you have any availability later today or tomorrow? Also, what's the best phone number to reach you at?"},
       ]},
 
       // ─── Sam's actual text voice: short, direct, no 631 stuff ──────────
@@ -4028,32 +3992,12 @@ function openSMSPicker(ri){
       // No "this is Sam with Lendiago" opener (lead's already in the thread).
       // No "our bank team / 631 area code" (he removed that).
       soft_approval:{label:"Pre-Approved: Schedule Call",icon:"✅",templates:[
-        {l:"Pre-approved w/ range — ask time",b:"Hi "+first+", you're pre-approved for up to $[X]–$[Y]. What time works best for you tomorrow to schedule a quick call to go over everything?"},
-        {l:"Pre-approved — today or tomorrow",b:"Hi "+first+", you're pre-approved for up to $[X]–$[Y]. When works for you today or tomorrow to hop on a quick call?"},
-        {l:"Pre-approved — available now",b:"Hi "+first+", you're pre-approved for up to $[X]–$[Y]. I'm available now if you want to jump on a quick call and go over everything."},
-        {l:"No range yet — just schedule",b:"Hi "+first+", soft approval is in. What time works best for you tomorrow to schedule a quick call to go over the program?"},
-        // Pushback handler: lead asks for the offer in writing instead of a call.
-        // Modeled on Sam's actual response to Mikhail: reframes the call as the
-        // underwriting team walking through the offer in detail, not a sales pitch.
-        {l:"'Just send it over here' pushback",b:"Hi "+first+", we need to schedule a call with the underwriting team so they can go over the offer with you in detail and explain the entire process. What time works best for you today?"},
-        // Urgency pin-down: Sam's "I just checked with the team" pattern — shows
-        // he's actively advocating + manufactures scarcity + still gives a tomorrow
-        // fallback. Very effective for leads sitting on a schedule-the-call status.
-        {l:"Checked w/ team — one slot today",b:"Hi "+first+", I just checked with the team — only available time today is [TIME] EST. If that works for you, I'll get you scheduled. Otherwise, what time tomorrow works best?"},
-        {l:"Shorter — pin down a time",b:"Hi "+first+", need to lock a time with the underwriting team. Does [TIME] today work? If not, what time tomorrow is best?"},
-        // ─── Ghosted after pre-approval — direct, no "just following up" ───
-        // Lead got the pre-approval message and went quiet. These acknowledge the
-        // approval is still good so it doesn't feel like starting over.
-        {l:"Ghosted — where are we on the call?",b:"Hi "+first+", where are we on the call? Pre-approval's still good — just need to lock a time."},
-        {l:"Still want to move forward?",b:"Hi "+first+", haven't heard back. Still want to lock in the call? If not I'll close out the file on my end."},
-        // ─── General "approval ready" flow — no $ range, specialist framing ───
-        // Companion to the "Approval ready — schedule call (full)" intro. Use
-        // these for the 2nd+ touches so the "specialist + approval ready"
-        // framing carries through the whole sequence.
+        // ─── 3 best templates covering the schedule-call flow ─────────────
+        // 1. Default: good news + schedule (general, no $ range to fill in)
+        // 2. Pushback handler: "just send it in writing" → reframe as UW walkthrough
+        // 3. Last call: close-out for ghosted leads
         {l:"Good news — specialist finalized, approval ready",b:"Hi "+first+", quick update — specialist finalized the review and we have an approval ready to go. Just need to set up a quick call to walk you through everything. What time today or tomorrow works best?"},
-        {l:"Good news — short version",b:"Hi "+first+", good news — specialist finished the review, approval is ready. Let's lock in that call — what time today or tomorrow works best?"},
-        {l:"Specialist still ready — soft nudge",b:"Hi "+first+", circling back on the call — specialist is still ready to go and the approval is still open on our end. What time this week works for you?"},
-        {l:"Specialist waiting — direct nudge",b:"Hi "+first+", specialist is waiting on you to lock in the call. Approval's still good. What time today or tomorrow is best?"},
+        {l:"'Just send it over here' pushback",b:"Hi "+first+", we need to schedule a call with the underwriting team so they can go over the offer with you in detail and explain the entire process. What time works best for you today?"},
         {l:"Last call — approval still open",b:"Hi "+first+", haven't heard back on scheduling. Approval's still open — just need to lock in the call. If this still works for you let me know a time, otherwise I'll close out the file on my end."},
       ]},
 
@@ -4098,14 +4042,9 @@ function openSMSPicker(ri){
       ]},
 
       checkin:{label:"Follow-Up",icon:"🔄",templates:[
-        {l:"Checking on report",b:"Hi "+first+", following up. Were you able to send over your credit report?"},
-        {l:"Here when you're ready",b:"Hi "+first+", 0% window is still open on our end. Reply here whenever you'd like to pick it back up."},
-        // ─── Ghosted / no response — Sam-voice, no "just following up" ───
-        {l:"Still want to move on this?",b:"Hi "+first+", still want to move on this? Let me know and I'll pick it back up."},
-        {l:"Where are we on this?",b:"Hi "+first+", where are we on this? Let me know what you're thinking."},
         {l:"Credit report still coming?",b:"Hi "+first+", still planning to send over the credit report? Once I have it I'll get the numbers running for you."},
+        {l:"Still want to move on this?",b:"Hi "+first+", still want to move on this? Let me know and I'll pick it back up."},
         {l:"Haven't heard back — close or keep going?",b:"Hi "+first+", haven't heard back from you. Still want to move forward on this? If not I'll close out the file on my end."},
-        {l:"One-liner — you still good?",b:"Hi "+first+", you still good to move on this?"},
       ]},
 
       // ─── RE-ENGAGE — had a Lex pre-approval, went cold ────────────────
@@ -4114,29 +4053,31 @@ function openSMSPicker(ri){
       // good, want to lock in that call?"
       reengage:{label:"Re-engage — Lex Approval on File",icon:"🔁",templates:[
         {l:"Lex approval still good",b:"Hi "+first+", your Lex pre-approval is still on file. Want to pick back up and get that call scheduled?"},
-        {l:"Approval + range",b:"Hi "+first+", you were pre-approved for up to $[X]–$[Y]. That's still good on our end — want to lock in a quick call?"},
         {l:"Last check-in",b:"Hi "+first+", haven't heard back in a bit. Pre-approval's still good if you want to schedule the call. Otherwise I'll close out the file."},
         {l:"Soft nudge",b:"Hi "+first+", circling back one more time. Approval's still on file — just reply here if you want to pick it up."},
       ]},
 
       // ─── POST-CALL → contracts / next steps ───────────────────────────
-      // After the specialist/underwriting call. Confirms what was discussed
-      // and sets the next action (contracts, verification, cards).
       post_call:{label:"Post-Call: Next Steps",icon:"✍️",templates:[
         {l:"Great call — contracts incoming",b:"Hi "+first+", great talking just now. Sending the contracts to your email in the next few minutes. Review, sign, and text me once it's done so I can confirm on my end."},
         {l:"Great call — program recap",b:"Hi "+first+", great call. Quick recap: approved for $[X] on the 0% credit line program, [X] months intro APR, no daily payments. Next step is contracts — sending now."},
-        {l:"Credit line app link",b:"Hi "+first+", here's the credit line application link we talked about: [LINK]. Takes ~5 min. Once it's in I'll push it through and we'll get the approval set in stone."},
         {l:"Missed call — reschedule",b:"Hi "+first+", tried calling but didn't catch you. When works better? Happy to reschedule — just let me know a time."},
       ]},
 
       // ─── CARDS SHIPPED / PICK-UP ──────────────────────────────────────
-      // After contracts are signed. Tracks the physical card arrival and
-      // activation. Modeled on the William Clinton flow (truist cards came in).
       cards_shipped:{label:"Cards: Shipping & Activation",icon:"📦",templates:[
         {l:"Cards shipped — ETA 5-7 days",b:"Hi "+first+", cards are on the way. Should hit your mailbox in 5-7 business days. Text me once they land so we can activate and run the first charge."},
         {l:"Cards arrived — pick up",b:"Hi "+first+", the cards came in. Pick them up when you get a chance and lmk once you have them so we can activate."},
-        {l:"Confirm cards arrived",b:"Hi "+first+", checking in — did the cards arrive yet? Want to make sure nothing got held up at the issuer."},
         {l:"Ready to activate",b:"Hi "+first+", ready to activate the cards whenever you're set. Takes about 2 minutes on the phone — what time works today?"},
+      ]},
+
+      // ─── COMMON Q&A → fast answers to lead questions ──────────────────
+      // Modeled on Sam's actual replies to Eric Hardiman: lead asks about
+      // loan types / hard-pull concerns, Sam fires back a tight explainer.
+      questions:{label:"Common Questions",icon:"❓",templates:[
+        {l:"Which loan type / program?",b:"Hi "+first+", yes we offer those options, but it starts with reviewing your credit report. Send over your Tri-Merge credit report from creditheroscore.com and I can let you know exactly what terms and programs you qualify for."},
+        {l:"Hard pull or soft pull?",b:"Hi "+first+", no hard pull — a hard pull only happens later when you're about to get funded. Right now it's just a soft pull that doesn't affect your score. You can pull it yourself through creditheroscore.com (or any website of your choice that provides a Tri-Merge credit report)."},
+        {l:"How long does it take?",b:"Hi "+first+", once I have your credit report I'll review and send to our specialist same day. If approved we can usually schedule the call within 24 hours and get the full approval locked in."},
       ]},
 
       // ─── PAYMENT / PROGRAM FEE ────────────────────────────────────────
