@@ -3441,17 +3441,12 @@ function smsNav(level,key){
     var sugHtml="";
     if(sug && TREE[sug.product] && TREE[sug.product].stages[sug.stage]){
       var sugStage=TREE[sug.product].stages[sug.stage];
-      // If the suggestion knows the exact template, jump straight into it
-      // (no re-finding in the Needs Fix list). Otherwise fall back to the
-      // stage's full template list.
-      // HTML-escape the double quotes so the onclick attribute doesn't close
-      // early. (The old bug: JSON.stringify wrapped the label in " and that
-      // closed the onclick=" attribute, breaking the click entirely.)
-      var sugClick = sug.templateLabel
-        ? "jumpToSuggestedTemplate('"+sug.product+"','"+sug.stage+"',"+JSON.stringify(sug.templateLabel).replace(/"/g,"&quot;")+")"
-        : "smsNav('templates','"+sug.product+':'+sug.stage+"')";
+      // No more inline onclick with escape juggling. Button gets an ID; the
+      // click handler is attached after innerHTML and reads sug fresh from
+      // window._smsSuggestion. Zero escape bugs, zero HTML-attribute closing
+      // issues, works with any special char in templateLabel.
       sugHtml=
-        '<button onclick="'+sugClick+'" style="width:100%;background:linear-gradient(135deg,rgba(201,162,39,.18),rgba(124,58,237,.14));border:1.5px solid rgba(201,162,39,.5);border-radius:14px;padding:14px 16px;margin-bottom:12px;color:#fff;font-size:14px;font-weight:800;touch-action:manipulation;text-align:left;display:flex;flex-direction:column;gap:4px;box-shadow:0 2px 12px rgba(201,162,39,.12)">'+
+        '<button id="sms-suggested-btn" style="width:100%;background:linear-gradient(135deg,rgba(201,162,39,.18),rgba(124,58,237,.14));border:1.5px solid rgba(201,162,39,.5);border-radius:14px;padding:14px 16px;margin-bottom:12px;color:#fff;font-size:14px;font-weight:800;touch-action:manipulation;text-align:left;display:flex;flex-direction:column;gap:4px;box-shadow:0 2px 12px rgba(201,162,39,.12);cursor:pointer">'+
           '<div style="display:flex;align-items:center;gap:10px;width:100%">'+
             '<span style="font-size:18px">💡</span>'+
             '<span style="font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#c9a227">Suggested</span>'+
@@ -3469,6 +3464,20 @@ function smsNav(level,key){
         return'<button onclick="smsNav(\'stage\',\''+pk+'\')" style="width:100%;background:rgba(255,255,255,.05);border:1.5px solid rgba(45,37,80,.8);border-radius:14px;padding:16px;margin-bottom:8px;color:#fff;font-size:15px;font-weight:800;touch-action:manipulation;text-align:left;display:flex;align-items:center;gap:12px">'+prod.icon+'<span style="flex:1">'+prod.label+'</span><span style="color:rgba(255,255,255,.25);font-size:20px">›</span></button>';
       }).join("")+
       '<div style="margin-top:12px;border-top:1px solid rgba(45,37,80,.5);padding-top:12px"></div>';
+    // Attach the Suggested-card click after innerHTML is set. Reads sug fresh
+    // from window._smsSuggestion so no escape issues can break the dispatch.
+    var sugBtn = document.getElementById("sms-suggested-btn");
+    if (sugBtn) {
+      sugBtn.addEventListener("click", function(){
+        var s = window._smsSuggestion;
+        if (!s) return;
+        if (s.templateLabel) {
+          jumpToSuggestedTemplate(s.product, s.stage, s.templateLabel);
+        } else {
+          smsNav("templates", s.product + ":" + s.stage);
+        }
+      });
+    }
   } else if(level==="stage"){
     var prod=TREE[key];
     list.innerHTML=
@@ -3884,10 +3893,13 @@ function openSMSPicker(ri){
       //   B) Statements are weak — ask about score / co-signer as a path
       // ─── SHORT, direct texts in Sam's voice ────────────────────────────
       pivot_credit:{label:"Pivot to Credit Line",icon:"🔁",templates:[
-        {l:"650+ score — convert to 0% credit line",b:"Hi "+first+", this is Sam with "+brand+". Was reviewing your application. With your credit in good shape, you'd be much better off on our 0% credit line program than the revenue-based one. 0% intro APR, no daily payments, capital on your own schedule. Want me to send over the credit line application?"},
-        {l:"They mentioned good score",b:"Hi "+first+", this is Sam with "+brand+". Got your application. You mentioned good credit, so wanted to flag — we also have a 0% credit line program that'd likely be a better deal (no daily payments, 0% intro APR). If your score is 680+ we can usually get you approved. Want me to send the credit line application?"},
-        {l:"Statements weak, ask score/co-signer",b:"Hi "+first+", this is Sam with "+brand+". Got your application. The revenue program isn't the strongest fit for your file right now, but our 0% credit line could work. What's your credit score? If 680+ we can likely get you approved. Co-signer with 680+ also works. Let me know."},
-        {l:"MCA approved but score is better fit for CC",b:"Hi "+first+", this is Sam with "+brand+". Good news on the MCA approval. Before you decide — with your credit score, our 0% credit line would be a much better deal (no daily payments, way lower total cost). Want me to pull the credit side so you can see both offers?"},
+        // ─── Pivot templates ask for the CREDIT REPORT, not the credit line
+        // app. The flow is: see credit report → review → send to Lexington →
+        // get approval → schedule call. Can't skip to the application.
+        {l:"650+ score — need credit report to pivot",b:"Hi "+first+", this is Sam with "+brand+". Was reviewing your application. With your credit in good shape, you'd be much better off on our 0% credit line program than the revenue-based one. 0% intro APR, no daily payments, capital on your own schedule. We need to see your credit report to lock in exact terms — easy option: credithero.com. Once I have it I'll run the numbers for you."},
+        {l:"They mentioned good score — need report",b:"Hi "+first+", this is Sam with "+brand+". Got your application. You mentioned good credit, so wanted to flag — we also have a 0% credit line program that'd likely be a better deal (no daily payments, 0% intro APR). We'd need to see your credit report to confirm. Easy option: credithero.com. Send it over and I'll review."},
+        {l:"Statements weak, ask score/co-signer",b:"Hi "+first+", this is Sam with "+brand+". Got your application. The revenue program isn't the strongest fit for your file right now, but our 0% credit line could work. What's your credit score? If 680+ we can likely get you approved — just need to see a tri-merge credit report (credithero.com is easy). Co-signer with 680+ also works. Let me know."},
+        {l:"MCA approved but credit may be better fit",b:"Hi "+first+", this is Sam with "+brand+". Good news on the MCA approval. Before you decide — with the credit you mentioned, our 0% credit line would be a much better deal (no daily payments, way lower total cost). We'd need to see your credit report to confirm — easy pull via credithero.com. Once I review I can show you both offers side by side."},
       ]},
 
       approved:{label:"Approval",icon:"✅",templates:[
@@ -3963,7 +3975,6 @@ function openSMSPicker(ri){
 
       intro:{label:"Intro",icon:"👋",templates:[
         {l:"Got your credit report",b:"Hi "+first+", this is Sam with "+brand+". Got your credit report and reviewing it now. I'll be the rep on your file from here — I'll reach back out as soon as I have an update."},
-        {l:"Got app, need credit next",b:"Hi "+first+", this is Sam with "+brand+". Got your application. Next step is pulling your credit so I can see what we can line up — it's a soft pull, won't affect your score. I'll send the link over here."},
         // ─── Got report → set up specialist call (bridge intro → soft_approval) ───
         // For when the report is in and Sam wants to move straight to a scheduled
         // call with the specialist, rather than wait for a formal pre-approval.
@@ -4042,7 +4053,7 @@ function openSMSPicker(ri){
       ]},
 
       checkin:{label:"Follow-Up",icon:"🔄",templates:[
-        {l:"Checking on report",b:"Hi "+first+", following up. Were you able to pull your credit report?"},
+        {l:"Checking on report",b:"Hi "+first+", following up. Were you able to send over your credit report?"},
         {l:"Here when you're ready",b:"Hi "+first+", 0% window is still open on our end. Reply here whenever you'd like to pick it back up."},
         // ─── Ghosted / no response — Sam-voice, no "just following up" ───
         {l:"Still want to move on this?",b:"Hi "+first+", still want to move on this? Let me know and I'll pick it back up."},
